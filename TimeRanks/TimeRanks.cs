@@ -127,6 +127,10 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
             {
                 HelpText = "Displays information about your current and upcoming rank"
             });
+            Commands.ChatCommands.Add(new Command("tbr.rank.admin", Delete, "rankdelete")
+            {
+                HelpText = "Deletes a player's rank from the database"
+            });
             dbManager.InitialSyncPlayers();
         }
 
@@ -255,5 +259,7 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
                 Log.ConsoleInfo(user.Name + " has been dropped a rank due to inactivity");
             }
         }
+        
+        private static void Delete(Command)
     }
 }
