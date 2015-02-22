@@ -146,7 +146,7 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
                     TShock.Utils.SendMultipleMatchError(args.Player, tsplayers.Select(p => p.Name));
 
                 if (players.Count > 1)
-                    TShock.Utils.SendMultipleMatchError(args.Player, tsplayers.Select(p => p.Name));
+                    TShock.Utils.SendMultipleMatchError(args.Player, players.Select(p => p.name));
                 else
                     switch (players.Count)
                     {
@@ -259,7 +259,19 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
                 Log.ConsoleInfo(user.Name + " has been dropped a rank due to inactivity");
             }
         }
-        
-        private static void Delete(Command)
+
+        private static void Delete(CommandArgs args)
+        {
+            if (args.Parameters.Count > 0)
+            {
+                var name = string.Join(" ", args.Parameters);
+                if (dbManager.DeletePlayer(name))
+                    args.Player.SendSuccessMessage("[TimeRanks] Deleted player: " + name);
+                else
+                    args.Player.SendErrorMessage("[TimeRanks] Failed to delete player named: " + name);
+            }
+            else
+                args.Player.SendErrorMessage("Invalid syntax! Proper syntax: /rankdelete <player>");
+        }
     }
 }
