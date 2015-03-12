@@ -13,7 +13,7 @@ using MySql.Data.MySqlClient;
 
 namespace TimeRanks //simplified from White's TimeBasedRanks plugin
 {
-    [ApiVersion(1,16)]
+    [ApiVersion(1,17)]
     public class TimeRanks : TerrariaPlugin
     {
         private IDbConnection _db;
@@ -73,7 +73,7 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
                     }
                     catch (MySqlException ex)
                     {
-                        Log.Error(ex.ToString());
+                        TShock.Log.Error(ex.ToString());
                         throw new Exception("MySQL not setup correctly.");
                     }
                     break;
@@ -99,7 +99,7 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
                 var t = new Thread(delegate()
                     {
                         dbManager.SaveAllPlayers();
-                        Log.ConsoleInfo("Saved players successfully");
+                        TShock.Log.ConsoleInfo("Saved players successfully");
                     });
                 t.Start();
                 t.Join();
@@ -118,7 +118,7 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
             if (config.Groups.Keys.Count > 0) //is this needed?
                 if (String.Equals(config.StartGroup, config.Groups.Keys.ToList()[0], StringComparison.CurrentCultureIgnoreCase))
                 {
-                    Log.ConsoleError("[TimeRanks] Initialization cancelled due to config error: " + "StartGroup is same as first rank name");
+                    TShock.Log.ConsoleError("[TimeRanks] Initialization cancelled due to config error: " + "StartGroup is same as first rank name");
                     ServerApi.Hooks.GameInitialize.Deregister(this, OnInitialize);
                     return;
                 }
@@ -159,18 +159,17 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
                                 args.Player.SendErrorMessage("---");
                                 return;
                             }
+
                             args.Player.SendSuccessMessage("{0}'s registration date: " + players[0].firstlogin, players[0].name);
                             args.Player.SendSuccessMessage("{0}'s total registered time: " + players[0].TotalRegisteredTime, players[0].name);
                             args.Player.SendSuccessMessage("{0}'s total time played: " + players[0].TimePlayed, players[0].name);
                             args.Player.SendSuccessMessage("{0}'s total activeness time: " + players[0].TotalTime, players[0].name);
-
+                            args.Player.SendSuccessMessage("{0}'s current rank position: " + players[0].GroupPosition + " (" + players[0].Group + ")", players[0].name);
+                            args.Player.SendSuccessMessage("{0}'s next rank: " + players[0].NextGroupName, players[0].name);
                             if (players[0].Online)
                             {
-                                args.Player.SendSuccessMessage("{0}'s current rank position: " + players[0].GroupPosition + " (" + players[0].Group + ")", players[0].name);
-                                args.Player.SendSuccessMessage("{0}'s next rank: " + players[0].NextGroupName, players[0].name);
-                            }
-                            else
                                 args.Player.SendSuccessMessage("{0} was last online: " + players[0].lastlogin + " (" + players[0].LastOnline.ElapsedString() + " ago)", players[0].name);
+                            }
                             break;
                     }
             }
@@ -237,9 +236,9 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
                 Players.Add(player);
 
                 if (!dbManager.InsertPlayer(player))
-                    Log.ConsoleError("[TimeRanks] Failed to create storage for {0}.", player.name);
+                    TShock.Log.ConsoleError("[TimeRanks] Failed to create storage for {0}.", player.name);
                 else
-                    Log.ConsoleInfo("[TimeRanks] Created storage for {0}.", player.name);
+                    TShock.Log.ConsoleInfo("[TimeRanks] Created storage for {0}.", player.name);
             }
 
             if (args.Player.Group.Name == config.StartGroup && config.Groups.Count > 1) //starting rank/new player
@@ -256,7 +255,7 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
 
                 TShock.Users.SetUserGroup(user, TimeRanks.config.Groups.Keys.ElementAt(groupIndex));
                 args.Player.SendInfoMessage("You have been demoted to " + player.Group + " due to inactivity!");
-                Log.ConsoleInfo(user.Name + " has been dropped a rank due to inactivity");
+                TShock.Log.ConsoleInfo(user.Name + " has been dropped a rank due to inactivity");
             }
         }
 
