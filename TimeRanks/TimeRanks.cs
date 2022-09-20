@@ -13,7 +13,7 @@ using MySql.Data.MySqlClient;
 
 namespace TimeRanks //simplified from White's TimeBasedRanks plugin
 {
-    [ApiVersion(1,17)]
+    [ApiVersion(2,1)]
     public class TimeRanks : TerrariaPlugin
     {
         private IDbConnection _db;
@@ -50,7 +50,7 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
 
         public override void Initialize()
         {
-            switch (TShock.Config.StorageType.ToLower())
+            switch (TShock.Config.Settings.StorageType.ToLower())
             {
                 case "sqlite":
                     _db = new SqliteConnection(string.Format("uri=file://{0},Version=3",
@@ -59,15 +59,15 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
                 case "mysql":
                     try
                     {
-                        var host = TShock.Config.MySqlHost.Split(':');
+                        var host = TShock.Config.Settings.MySqlHost.Split(':');
                         _db = new MySqlConnection
                         {
                             ConnectionString = String.Format("Server={0}; Port={1}; Database={2}; Uid={3}; Pwd={4}",
                             host[0],
                             host.Length == 1 ? "3306" : host[1],
-                            TShock.Config.MySqlDbName,
-                            TShock.Config.MySqlUsername,
-                            TShock.Config.MySqlPassword
+                            TShock.Config.Settings.MySqlDbName,
+                            TShock.Config.Settings.MySqlUsername,
+                            TShock.Config.Settings.MySqlPassword
                             )
                         };
                     }
@@ -140,13 +140,13 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
             {
                 var str = string.Join(" ", args.Parameters);
                 var players = Players.GetListByUsername(str).ToList();
-                var tsplayers = TShock.Utils.FindPlayer(str);
+                var tsplayers = TShock.UserAccounts.GetUserAccountsByName(str);
 
                 if (tsplayers.Count > 1)
-                    TShock.Utils.SendMultipleMatchError(args.Player, tsplayers.Select(p => p.Name));
+                    TShock.Utils.SendLogs(args.Player.Account.Name, Microsoft.Xna.Framework.Color.Blue);
 
                 if (players.Count > 1)
-                    TShock.Utils.SendMultipleMatchError(args.Player, players.Select(p => p.name));
+                    TShock.Utils.SendLogs(args.Player.Account.Name, Microsoft.Xna.Framework.Color.Blue);
                 else
                     switch (players.Count)
                     {
@@ -180,7 +180,7 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
                     args.Player.SendErrorMessage("Sorry, the server doesn't have stats to check");
                     return;
                 }
-                var player = Players.GetByUsername(args.Player.UserAccountName);
+                var player = Players.GetByUsername(args.Player.Account.Name);
                 args.Player.SendSuccessMessage("Your registration date: " + player.firstlogin);
                 args.Player.SendSuccessMessage("Your total registered time: " + player.TotalRegisteredTime);
                 args.Player.SendSuccessMessage("Your total time played: " + player.TotalTime);
@@ -210,7 +210,7 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
 
             if (!ply.IsLoggedIn) return;
 
-            var player = Players.GetByUsername(ply.UserAccountName);
+            var player = Players.GetByUsername(ply.Account.Name);
             if (player == null)
                 return;
 
@@ -222,16 +222,16 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
         {
             if (args.Player == null)
                 return;
-            if (args.Player.Name != args.Player.UserAccountName) //returns if player logs in as different name
+            if (args.Player.Name != args.Player.Account.Name) //returns if player logs in as different name
                 return;
 
-            var player = Players.GetByUsername(args.Player.UserAccountName);
+            var player = Players.GetByUsername(args.Player.Account.Name);
 
             if (player != null)
                 player.tsPlayer = args.Player;
             else
             {
-                player = new TrPlayer(args.Player.UserAccountName, 0, DateTime.UtcNow.ToString("G"),
+                player = new TrPlayer(args.Player.Account.Name, 0, DateTime.UtcNow.ToString("G"),
                     DateTime.UtcNow.ToString("G"), 0) { tsPlayer = args.Player };
                 Players.Add(player);
 
@@ -242,7 +242,7 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
             }
 
             if (args.Player.Group.Name == config.StartGroup && config.Groups.Count > 1) //starting rank/new player
-                TShock.Users.SetUserGroup(TShock.Users.GetUserByName(args.Player.UserAccountName), config.Groups.Keys.ToList()[0]); //AutoStarts the player to the config's first rank.
+                TShock.UserAccounts.SetUserGroup(TShock.UserAccounts.GetUserAccountByName(args.Player.Account.Name), config.Groups.Keys.ToList()[0]); //AutoStarts the player to the config's first rank.
             
             if (player.LastOnline.TotalSeconds > player.RankInfo.derankCost && player.RankInfo.derankCost > 0) //if not a new/starting player and passes inactivity limit. 0 = no limit
             {
@@ -251,9 +251,9 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
                     return;
                 player.time = 0; //resets player's activeness time back to 0, excluding first rank
 
-                var user = TShock.Users.GetUserByName(player.name);
+                var user = TShock.UserAccounts.GetUserAccountByName(player.name);
 
-                TShock.Users.SetUserGroup(user, TimeRanks.config.Groups.Keys.ElementAt(groupIndex));
+                TShock.UserAccounts.SetUserGroup(user, TimeRanks.config.Groups.Keys.ElementAt(groupIndex));
                 args.Player.SendInfoMessage("You have been demoted to " + player.Group + " due to inactivity!");
                 TShock.Log.ConsoleInfo(user.Name + " has been dropped a rank due to inactivity");
             }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Web.RegularExpressions;
 using TShockAPI;
 
 namespace TimeRanks
@@ -47,7 +48,7 @@ namespace TimeRanks
         {
             get
             {
-                return !Online ? TShock.Users.GetUserByName(name).Group : tsPlayer.Group.Name;
+                return !Online ? TShock.UserAccounts.GetUserAccountByName(name).Group : tsPlayer.Group.Name;
             }
         }
         public RankInfo RankInfo

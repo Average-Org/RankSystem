@@ -24,7 +24,7 @@ namespace TimeRanks
                 new SqlColumn("LastLogin", MySqlDbType.Text),
                 new SqlColumn("TotalTime", MySqlDbType.Int32)
                 );
-            sqlCreator.EnsureExists(table);
+            sqlCreator.EnsureTableStructure(table);
         }
 
         public bool InsertPlayer(TrPlayer player)

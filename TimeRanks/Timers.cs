@@ -41,7 +41,7 @@ namespace TimeRanks
                 if (player.NextGroupName == player.Group)
                     continue;
 
-                TShock.Users.SetUserGroup(TShock.Users.GetUserByName(player.name), player.NextGroupName);
+                TShock.UserAccounts.SetUserGroup(TShock.UserAccounts.GetUserAccountByName(player.name), player.NextGroupName);
 
                 player.tsPlayer.SendWarningMessage("You have ranked up!");
                 player.tsPlayer.SendWarningMessage("Your current rank position: " + player.GroupPosition + " (" + player.Group + ")");
