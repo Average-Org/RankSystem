@@ -7,8 +7,8 @@ namespace TimeRanks
 {
     class Timers
     {
-        private readonly Timer _uTimer;
-        private readonly Timer _bTimer;
+        private Timer _uTimer;
+        private Timer _bTimer;
 
         public Timers()
         {
@@ -27,26 +27,29 @@ namespace TimeRanks
 
         private static void UpdateTimer(object sender, ElapsedEventArgs args)
         {
-            foreach (var player in TimeRanks.Players.Online)
+
+            foreach (TrPlayer player in TimeRanks.Players.Online)
             {
-                player.time += 5; //adds 5 seconds to player's activeness time
-                player.totaltime += 5; //adds 5 seconds to player's total time played
+                player.time += 5;
+                player.totaltime += 5;
 
-                if (player.tsPlayer == null)
-                    continue;
 
-                if (player.time < TimeRanks.config.Groups[player.Group].rankCost)
-                    continue;
+                if(player.NextRankTime != "group is not part of the ranking system")
+                {
+                    if (player.time >= TimeRanks.config.Groups[player.Group].rankCost)
+                    {
+                        TShock.UserAccounts.SetUserGroup(TShock.UserAccounts.GetUserAccountByName(player.name), player.NextGroupName);
 
-                if (player.NextGroupName == player.Group)
-                    continue;
+                        player.tsPlayer.SendWarningMessage("You have ranked up!");
+                        player.tsPlayer.SendWarningMessage("Your current rank position: " + player.GroupPosition + " (" + player.Group + ")");
+                        player.tsPlayer.SendWarningMessage("Your next rank: " + player.NextGroupName);
+                        player.tsPlayer.SendWarningMessage("Next rank in: " + player.NextRankTime);
+                    }
+                }
 
-                TShock.UserAccounts.SetUserGroup(TShock.UserAccounts.GetUserAccountByName(player.name), player.NextGroupName);
 
-                player.tsPlayer.SendWarningMessage("You have ranked up!");
-                player.tsPlayer.SendWarningMessage("Your current rank position: " + player.GroupPosition + " (" + player.Group + ")");
-                player.tsPlayer.SendWarningMessage("Your next rank: " + player.NextGroupName);
-                player.tsPlayer.SendWarningMessage("Next rank in: " + player.NextRankTime);
+
+
             }
         }
 

@@ -22,11 +22,10 @@ namespace TimeRanks
     public class Config
     {
         public string StartGroup = "default";
-        public readonly Dictionary<string, RankInfo> Groups = new Dictionary<string, RankInfo> //new Dictionary<string, RankInfo>();
+        public Dictionary<string, RankInfo> Groups = new Dictionary<string, RankInfo> //new Dictionary<string, RankInfo>();
         {
-            {"newmember", new RankInfo("member", 60, 0)},
-            {"member", new RankInfo("activemember", 120, 0)},
-            {"activemember", new RankInfo("activemember", 180, 60)}
+            {"member", new RankInfo("frequent", 60, 0)}
+
         };
 
         public void Write(string path)

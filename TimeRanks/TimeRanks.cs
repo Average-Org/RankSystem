@@ -25,12 +25,12 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
 
         public override string Author
         {
-            get { return "White/Bippity"; }
+            get { return "Average"; }
         }
 
         public override string Description
         {
-            get { return "Simplified Timed-Based Ranks"; }
+            get { return "Timed-Based Ranks"; }
         }
 
         public override string Name
@@ -131,7 +131,17 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
             {
                 HelpText = "Deletes a player's rank from the database"
             });
+            Commands.ChatCommands.Add(new Command("tbr.rank.admin", Reload, "rreload")
+            {
+                HelpText = "Reloads the TimeRanks plugin."
+            });
             dbManager.InitialSyncPlayers();
+        }
+
+        private static void Reload(CommandArgs args)
+        {
+            var configPath = Path.Combine(TShock.SavePath, "TimeRanks.json");
+            (config = Config.Read(configPath)).Write(configPath);
         }
 
         private static void Check(CommandArgs args)
