@@ -30,17 +30,17 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
 
         public override string Description
         {
-            get { return "Timed-Based Ranks"; }
+            get { return "Rank progression system based on user playtime"; }
         }
 
         public override string Name
         {
-            get { return "Timed Ranks"; }
+            get { return "TimeRanks"; }
         }
 
         public override Version Version
         {
-            get { return new Version(0, 1); }
+            get { return new Version(1, 0, 2); }
         }
 
         public TimeRanks(Main game)
@@ -142,6 +142,7 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
         {
             var configPath = Path.Combine(TShock.SavePath, "TimeRanks.json");
             (config = Config.Read(configPath)).Write(configPath);
+            args.Player.SendSuccessMessage("TimeRanks configuration file has been reloaded!");
         }
 
         private static void Check(CommandArgs args)
@@ -170,12 +171,10 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
                                 return;
                             }
 
-                            args.Player.SendSuccessMessage("{0}'s registration date: " + players[0].firstlogin, players[0].name);
-                            args.Player.SendSuccessMessage("{0}'s total registered time: " + players[0].TotalRegisteredTime, players[0].name);
+                            args.Player.SendSuccessMessage("{0}'s registration date: (for {1})" + players[0].firstlogin, players[0].name, players[0].TotalRegisteredTime);
                             args.Player.SendSuccessMessage("{0}'s total time played: " + players[0].TimePlayed, players[0].name);
-                            args.Player.SendSuccessMessage("{0}'s total activeness time: " + players[0].TotalTime, players[0].name);
                             args.Player.SendSuccessMessage("{0}'s current rank position: " + players[0].GroupPosition + " (" + players[0].Group + ")", players[0].name);
-                            args.Player.SendSuccessMessage("{0}'s next rank: " + players[0].NextGroupName, players[0].name);
+                            args.Player.SendSuccessMessage("{0}'s next rank: " + players[0].NextGroupName + " will unlock in... {1}", players[0].name, players[0].NextRankTime);
                             if (players[0].Online)
                             {
                                 args.Player.SendSuccessMessage("{0} was last online: " + players[0].lastlogin + " (" + players[0].LastOnline.ElapsedString() + " ago)", players[0].name);
@@ -187,17 +186,14 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
             {
                 if (args.Player == TSPlayer.Server)
                 {
-                    args.Player.SendErrorMessage("Sorry, the server doesn't have stats to check");
+                    args.Player.SendErrorMessage("You cannot check the server user's playtime! Sorry :(");
                     return;
                 }
                 var player = Players.GetByUsername(args.Player.Account.Name);
-                args.Player.SendSuccessMessage("Your registration date: " + player.firstlogin);
-                args.Player.SendSuccessMessage("Your total registered time: " + player.TotalRegisteredTime);
+                args.Player.SendSuccessMessage("Your registration date: " + player.firstlogin + " (for " + player.TotalRegisteredTime + ")");
                 args.Player.SendSuccessMessage("Your total time played: " + player.TotalTime);
-                args.Player.SendSuccessMessage("Your total activeness time: " + player.TimePlayed);
                 args.Player.SendSuccessMessage("Your current rank position: " + player.GroupPosition + " (" + player.Group + ")");
-                args.Player.SendSuccessMessage("Your next rank: " + player.NextGroupName);
-                args.Player.SendSuccessMessage("Next rank in: " + player.NextRankTime);
+                args.Player.SendSuccessMessage("Your next rank: " + player.NextGroupName + " will be unlocked in... " + player.NextRankTime);
             }
         }
 
