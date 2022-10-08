@@ -86,8 +86,8 @@ namespace TimeRanks
         {
             get
             {
-                var ts = new TimeSpan(0, 0, 0, time);
-                return ts.ElapsedString();
+                var ts = TotalTime;
+                return ts;
             }
         }
 
@@ -144,7 +144,7 @@ namespace TimeRanks
             }
         }
 
-        private RankInfo NextRankInfo
+        public RankInfo NextRankInfo
         {
             get
             {
@@ -165,7 +165,7 @@ namespace TimeRanks
 
         private static readonly Regex CleanCommandRegex = new Regex(@"^\/?(\w*\w)");
 
-        private bool ConfigContainsGroup
+        public bool ConfigContainsGroup
         {
             get { return TimeRanks.config.Groups.Keys.Contains(Group); }
         }

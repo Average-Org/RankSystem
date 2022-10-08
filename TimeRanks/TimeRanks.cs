@@ -224,6 +224,29 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
             player.tsPlayer = null; //removes the player from the initialized database/queue thingy?
         }
 
+        private static void checkUserForRankup(PlayerPostLoginEventArgs args)
+        {
+            var player = Players.GetByUsername(args.Player.Account.Name);
+            if (!player.ConfigContainsGroup) {
+                return;
+            }
+
+            var user = TShock.UserAccounts.GetUserAccountByName(player.name);
+            var groupIndex = TimeRanks.config.Groups.Keys.ToList().IndexOf(player.Group) + 1;
+
+            if (player.totaltime >= player.NextRankInfo.rankCost)
+            {
+                TShock.UserAccounts.SetUserGroup(user, TimeRanks.config.Groups.Keys.ElementAt(groupIndex));
+                checkUserForRankup(args);
+            }
+            else
+            {
+                return;
+            }
+
+
+        }
+
         private static void PostLogin(PlayerPostLoginEventArgs args)
         {
             if (args.Player == null)
@@ -263,6 +286,11 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
                 args.Player.SendInfoMessage("You have been demoted to " + player.Group + " due to inactivity!");
                 TShock.Log.ConsoleInfo(user.Name + " has been dropped a rank due to inactivity");
             }
+            if(!player.ConfigContainsGroup)
+            {
+                checkUserForRankup(args);
+            }
+
         }
 
         private static void Delete(CommandArgs args)
