@@ -273,22 +273,13 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
             if (args.Player.Group.Name == config.StartGroup && config.Groups.Count > 1) //starting rank/new player
                 TShock.UserAccounts.SetUserGroup(TShock.UserAccounts.GetUserAccountByName(args.Player.Account.Name), config.Groups.Keys.ToList()[0]); //AutoStarts the player to the config's first rank.
             
-            if (player.LastOnline.TotalSeconds > player.RankInfo.derankCost && player.RankInfo.derankCost > 0) //if not a new/starting player and passes inactivity limit. 0 = no limit
-            {
-                var groupIndex = TimeRanks.config.Groups.Keys.ToList().IndexOf(player.Group) - 1;
-                if (groupIndex < 0)
-                    return;
-                player.time = 0; //resets player's activeness time back to 0, excluding first rank
-
-                var user = TShock.UserAccounts.GetUserAccountByName(player.name);
-
-                TShock.UserAccounts.SetUserGroup(user, TimeRanks.config.Groups.Keys.ElementAt(groupIndex));
-                args.Player.SendInfoMessage("You have been demoted to " + player.Group + " due to inactivity!");
-                TShock.Log.ConsoleInfo(user.Name + " has been dropped a rank due to inactivity");
-            }
-            if(!player.ConfigContainsGroup)
+            if(player.ConfigContainsGroup)
             {
                 checkUserForRankup(args);
+            }
+            else
+            {
+                return;
             }
 
         }

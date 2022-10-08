@@ -63,7 +63,7 @@ namespace TimeRanks
 
         public TrPlayer(string name, int time, string first, string last, int totaltime)
         {
-            this.time = time;
+            this.time = totaltime;
             this.name = name;
             firstlogin = first;
             lastlogin = last;
