@@ -11,9 +11,9 @@ namespace TimeRanks
     {
         private readonly List<TrPlayer> _players = new List<TrPlayer>();
 
-        public void Add(string name, int time, string firstlogin, string lastlogin, int totaltime)
+        public void Add(string name, int time, string firstlogin, string lastlogin, int totaltime, string lastRewardUsed)
         {
-            _players.Add(new TrPlayer(name, time, firstlogin, lastlogin, totaltime));
+            _players.Add(new TrPlayer(name, time, firstlogin, lastlogin, totaltime, lastRewardUsed));
         }
         public void Add(TrPlayer player)
         {
@@ -44,6 +44,7 @@ namespace TimeRanks
         public readonly string name;
         public readonly string firstlogin;
         public string lastlogin;
+        public string lastRewardUsed;
         public string Group
         {
             get
@@ -61,13 +62,14 @@ namespace TimeRanks
         public int time;
         public int totaltime;
 
-        public TrPlayer(string name, int time, string first, string last, int totaltime)
+        public TrPlayer(string name, int time, string first, string last, int totaltime, string lastRewardUsed)
         {
             this.time = totaltime;
             this.name = name;
             firstlogin = first;
             lastlogin = last;
             this.totaltime = totaltime;
+            this.lastRewardUsed = lastRewardUsed;
         }
 
         public string TotalRegisteredTime

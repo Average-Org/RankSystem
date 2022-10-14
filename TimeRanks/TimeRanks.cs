@@ -10,6 +10,10 @@ using Terraria;
 using TerrariaApi.Server;
 using Mono.Data.Sqlite;
 using MySql.Data.MySqlClient;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Threading.Tasks;
 
 namespace TimeRanks //simplified from White's TimeBasedRanks plugin
 {
@@ -20,6 +24,8 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
         public static Database dbManager;
         public static Config config = new Config();
         private static Timers _timers;
+        static HttpClient client = new HttpClient();
+
 
         internal static readonly TrPlayers Players = new TrPlayers();
 
@@ -135,6 +141,10 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
             {
                 HelpText = "Reloads the TimeRanks plugin."
             });
+            Commands.ChatCommands.Add(new Command("tbr.vote", Reward, "reward")
+            {
+                HelpText = "Rewards the player for voting."
+            });
             dbManager.InitialSyncPlayers();
         }
 
@@ -195,6 +205,91 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
                 args.Player.SendSuccessMessage("Your current rank position: " + player.GroupPosition + " (" + player.Group + ")");
                 args.Player.SendSuccessMessage("Your next rank: " + player.NextGroupName + " will be unlocked in... " + player.NextRankTime);
             }
+        }
+
+        private static void Reward(CommandArgs args)
+        {
+
+            if (!args.Player.IsLoggedIn)
+            {
+                args.Player.SendErrorMessage("You must be logged in first!");
+                return;
+            }
+
+            string playerName = args.Player.Account.Name;
+
+
+            if (Players.GetByUsername(args.Player.Name).lastRewardUsed != null) { 
+                DateTime now = DateTime.Now;
+                DateTime then = DateTime.Parse(Players.GetByUsername(args.Player.Name).lastRewardUsed);
+
+                if (now.Subtract(then).TotalHours >= 24)
+                {
+
+                }
+                else
+                {
+                    args.Player.SendErrorMessage("You have already claimed your reward for today!");
+                    return;
+                }
+
+            }
+
+
+            if(checkifPlayerVoted(args.Player).Result == true)
+            {
+                Players.GetByUsername(args.Player.Name).totaltime += 1000;
+                TSPlayer.All.SendMessage(args.Player.Name + " has voted for us and received one hour of playtime added to their account! Use /tvote to get the same reward!", Microsoft.Xna.Framework.Color.Aqua);
+                Players.GetByUsername(args.Player.Name).lastRewardUsed = DateTime.Now.ToString();
+            }
+
+        }
+
+        public static async Task<bool> checkifPlayerVoted(TSPlayer player)
+        {
+            bool hasVoted = false;
+
+            string voteUrl = "http://terraria-servers.com/api/?object=votes&element=claim&key=" + config.voteApiKey + "&username=" + player.Name;
+
+            try
+            {
+                using (HttpClient client = new HttpClient())
+                {
+                    using (HttpResponseMessage res = await client.GetAsync(voteUrl))
+                    {
+                        using (HttpContent content = res.Content)
+                        {
+                            var data = await content.ReadAsStringAsync();
+
+                            if(data != null)
+                            {
+                                if (data == "1")
+                                {
+                                    hasVoted = true;
+                                    return hasVoted;
+                                }
+                                else
+                                {
+                                    hasVoted = false;
+                                    return hasVoted;
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("No data");
+                            }
+                        }
+                    }
+                }
+            }catch (Exception ex)
+            {
+                Console.WriteLine("Exception!!!!");
+                Console.Write(ex);
+                return hasVoted;
+            }
+
+            return hasVoted;
+
         }
 
         private static void OnGreet(GreetPlayerEventArgs args)
@@ -261,7 +356,7 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
             else
             {
                 player = new TrPlayer(args.Player.Account.Name, 0, DateTime.UtcNow.ToString("G"),
-                    DateTime.UtcNow.ToString("G"), 0) { tsPlayer = args.Player };
+                    DateTime.UtcNow.ToString("G"), 0, null) { tsPlayer = args.Player };
                 Players.Add(player);
 
                 if (!dbManager.InsertPlayer(player))
@@ -272,8 +367,8 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
 
             if (args.Player.Group.Name == config.StartGroup && config.Groups.Count > 1) //starting rank/new player
                 TShock.UserAccounts.SetUserGroup(TShock.UserAccounts.GetUserAccountByName(args.Player.Account.Name), config.Groups.Keys.ToList()[0]); //AutoStarts the player to the config's first rank.
-            
-            if(player.ConfigContainsGroup)
+
+            if (player.ConfigContainsGroup)
             {
                 checkUserForRankup(args);
             }
@@ -281,6 +376,29 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
             {
                 return;
             }
+
+            if (checkifPlayerVoted(args.Player).Result == true)
+            {
+
+                if (Players.GetByUsername(args.Player.Name).lastRewardUsed != null)
+                {
+                    DateTime now = DateTime.Now;
+                    DateTime then = DateTime.Parse(Players.GetByUsername(args.Player.Name).lastRewardUsed);
+
+                    if (now.Subtract(then).TotalHours >= 24)
+                    {
+                        Players.GetByUsername(args.Player.Name).totaltime += 1000;
+                        TSPlayer.All.SendMessage(args.Player.Name + " has voted for us and received one hour of playtime added to their account! Use /vote to get the same reward!", Microsoft.Xna.Framework.Color.Aqua);
+                    }
+                    else
+                    {
+                        return;
+                    }
+
+                }
+            }
+
+            
 
         }
 

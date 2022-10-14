@@ -22,14 +22,15 @@ namespace TimeRanks
                 new SqlColumn("Time", MySqlDbType.Int32),
                 new SqlColumn("FirstLogin", MySqlDbType.Text),
                 new SqlColumn("LastLogin", MySqlDbType.Text),
-                new SqlColumn("TotalTime", MySqlDbType.Int32)
+                new SqlColumn("TotalTime", MySqlDbType.Int32),
+                new SqlColumn("LastRewardUsed", MySqlDbType.Text)
                 );
             sqlCreator.EnsureTableStructure(table);
         }
 
         public bool InsertPlayer(TrPlayer player)
         {
-            return _db.Query("INSERT INTO TimeRanks (Name, Time, FirstLogin, Lastlogin, TotalTime)" + "VALUES (@0, @1, @2, @3, @4)", player.name, player.time, player.firstlogin, player.lastlogin, player.totaltime) != 0; 
+            return _db.Query("INSERT INTO TimeRanks (Name, Time, FirstLogin, Lastlogin, TotalTime, LastRewardUsed)" + "VALUES (@0, @1, @2, @3, @4, @5)", player.name, player.time, player.firstlogin, player.lastlogin, player.totaltime, player.lastRewardUsed) != 0; 
         }
 
         public bool DeletePlayer(string player)
@@ -40,8 +41,8 @@ namespace TimeRanks
         public bool SavePlayer(TrPlayer player)
         {
             player.lastlogin = DateTime.UtcNow.ToString("G");
-            return _db.Query("UPDATE TimeRanks SET Time = @0, LastLogin = @1, TotalTime = @2 WHERE Name = @3",
-                player.time, player.lastlogin, player.totaltime, player.name) != 0;
+            return _db.Query("UPDATE TimeRanks SET Time = @0, LastLogin = @1, TotalTime = @2, LastRewardUsed = @4 WHERE Name = @3",
+                player.time, player.lastlogin, player.totaltime, player.name, player.lastRewardUsed) != 0;
         }
 
         public void SaveAllPlayers()
@@ -63,7 +64,9 @@ namespace TimeRanks
                     var firstlogin = reader.Get<string>("FirstLogin");
                     var lastlogin = reader.Get<string>("LastLogin");
                     var totaltime = reader.Get<int>("TotalTime");
-                    TimeRanks.Players.Add(name, time, firstlogin, lastlogin, totaltime);
+                    var lastRewardUsed = reader.Get<string>("LastRewardUsed");
+
+                    TimeRanks.Players.Add(name, time, firstlogin, lastlogin, totaltime, lastRewardUsed);
                 }
             }
         }

@@ -22,6 +22,8 @@ namespace TimeRanks
     public class Config
     {
         public string StartGroup = "default";
+        public string voteApiKey = "";
+
         public Dictionary<string, RankInfo> Groups = new Dictionary<string, RankInfo> //new Dictionary<string, RankInfo>();
         {
             {"member", new RankInfo("frequent", 60, 0)}
