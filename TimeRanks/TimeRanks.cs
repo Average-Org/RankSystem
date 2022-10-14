@@ -46,7 +46,7 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
 
         public override Version Version
         {
-            get { return new Version(1, 0, 2); }
+            get { return new Version(1, 1, 0); }
         }
 
         public TimeRanks(Main game)
