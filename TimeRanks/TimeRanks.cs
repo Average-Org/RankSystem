@@ -27,7 +27,7 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
         static HttpClient client = new HttpClient();
 
 
-        internal static readonly TrPlayers Players = new TrPlayers();
+        public static readonly TrPlayers Players = new TrPlayers();
 
         public override string Author
         {
@@ -155,6 +155,11 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
             args.Player.SendSuccessMessage("TimeRanks configuration file has been reloaded!");
         }
 
+        public void givePlaytime(TSPlayer player, int time)
+        {
+            Players.GetByUsername(player.Name).totaltime += 1500;
+        }
+
         private static void Check(CommandArgs args)
         {
             if (args.Parameters.Count > 0)
@@ -238,7 +243,7 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
 
             if(checkifPlayerVoted(args.Player).Result == true)
             {
-                Players.GetByUsername(args.Player.Name).totaltime += 1000;
+                Players.GetByUsername(args.Player.Name).totaltime += 3600;
                 TSPlayer.All.SendMessage(args.Player.Name + " has voted for us and received one hour of playtime added to their account! Use /tvote to get the same reward!", Microsoft.Xna.Framework.Color.Aqua);
                 Players.GetByUsername(args.Player.Name).lastRewardUsed = DateTime.Now.ToString();
             }
@@ -387,7 +392,7 @@ namespace TimeRanks //simplified from White's TimeBasedRanks plugin
 
                     if (now.Subtract(then).TotalHours >= 24)
                     {
-                        Players.GetByUsername(args.Player.Name).totaltime += 1000;
+                        Players.GetByUsername(args.Player.Name).totaltime += 3600;
                         TSPlayer.All.SendMessage(args.Player.Name + " has voted for us and received one hour of playtime added to their account! Use /vote to get the same reward!", Microsoft.Xna.Framework.Color.Aqua);
                     }
                     else

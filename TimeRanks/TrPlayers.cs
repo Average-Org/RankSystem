@@ -9,7 +9,7 @@ namespace TimeRanks
 {
     public class TrPlayers
     {
-        private readonly List<TrPlayer> _players = new List<TrPlayer>();
+        public readonly List<TrPlayer> _players = new List<TrPlayer>();
 
         public void Add(string name, int time, string firstlogin, string lastlogin, int totaltime, string lastRewardUsed)
         {
