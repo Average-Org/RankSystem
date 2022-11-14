@@ -3,7 +3,7 @@ using System.Linq;
 using System.Timers;
 using TShockAPI;
 
-namespace TimeRanks
+namespace RankSystem
 {
     class Timers
     {
@@ -28,22 +28,28 @@ namespace TimeRanks
         private static void UpdateTimer(object sender, ElapsedEventArgs args)
         {
 
-            foreach (TrPlayer player in TimeRanks.Players.Online)
+            foreach (RPlayer player in RankSystem._players)
             {
-                player.time += 5;
                 player.totaltime += 5;
 
 
-                if(player.NextRankTime != "group is not part of the ranking system")
+                if(player.NextRankTime != null)
                 {
-                    if (player.time >= TimeRanks.config.Groups[player.Group].rankCost)
+
+                    var reqPoints = player.NextRankInfo.rankCost;
+
+                    if (RankSystem.config.doesCurrencyAffectRankTime == true)
+                    {
+                        reqPoints = player.NextRankInfo.rankCost - ((RankSystem.config.currencyAffect / 100) * (int)Math.Round(SimpleEcon.PlayerManager.GetPlayer(player.name).balance));
+                    }
+
+
+                    if (player.totaltime >= reqPoints)
                     {
                         TShock.UserAccounts.SetUserGroup(TShock.UserAccounts.GetUserAccountByName(player.name), player.NextGroupName);
 
-                        player.tsPlayer.SendWarningMessage("You have ranked up!");
-                        player.tsPlayer.SendWarningMessage("Your current rank position: " + player.GroupPosition + " (" + player.Group + ")");
-                        player.tsPlayer.SendWarningMessage("Your next rank: " + player.NextGroupName);
-                        player.tsPlayer.SendWarningMessage("Next rank in: " + player.NextRankTime);
+                        player.tsPlayer.SendMessage("[c/00ffff:Y][c/00fff7:o][c/00fff0:u] [c/00ffe2:h][c/00ffdb:a][c/00ffd4:v][c/00ffcd:e] [c/00ffbf:r][c/00ffb8:a][c/00ffb1:n][c/00ffaa:k][c/00ffa3:e][c/00ff9c:d] [c/00ff8e:u][c/00ff87:p][c/00ff80:!]", Microsoft.Xna.Framework.Color.White);
+
                     }
                 }
 
@@ -55,7 +61,7 @@ namespace TimeRanks
 
         private static void BackupTimer(object sender, ElapsedEventArgs args)
         {
-            TimeRanks.dbManager.SaveAllPlayers();
+            RankSystem.dbManager.SaveAllPlayers();
         }
     }
 }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 
-namespace TimeRanks
+namespace RankSystem
 {
     internal static class Extensions
     {
