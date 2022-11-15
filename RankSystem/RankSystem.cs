@@ -91,6 +91,12 @@ namespace RankSystem
             ServerApi.Hooks.ServerLeave.Register(this, OnLeave);
             GeneralHooks.ReloadEvent += Reload;
             PlayerHooks.PlayerPostLogin += PostLogin;
+            PlayerHooks.PlayerLogout += PlayerLogout;
+        }
+
+        private void PlayerLogout(PlayerLogoutEventArgs e)
+        {
+            throw new NotImplementedException();
         }
 
         protected override void Dispose(bool disposing)
@@ -140,6 +146,10 @@ namespace RankSystem
 
         private static void Check(CommandArgs args)
         {
+            if (args.Player == TSPlayer.Server)
+            {
+                return;
+            }
             if (args.Parameters.Count > 0)
             {
                 var str = string.Join(" ", args.Parameters);
@@ -189,16 +199,23 @@ namespace RankSystem
 
             if (ply == null)
                 return;
-            if (ply.IsLoggedIn)
+            if (ply.IsLoggedIn && ply.ConnectionAlive)
                 PostLogin(new PlayerPostLoginEventArgs(ply));
         }
 
         private static void OnLeave(LeaveEventArgs args)
         {
-            if (TShock.Players[args.Who] == null)
+            if (args.Who >= TShock.Players.Length || args.Who < 0)
+            {
                 return;
+            }
 
             var ply = TShock.Players[args.Who];
+
+            if(ply == null)
+            {
+                return;
+            }
 
             if (!ply.IsLoggedIn) return;
 
@@ -210,9 +227,18 @@ namespace RankSystem
             _players.Remove(player);
         }
 
-        private static void checkUserForRankup(PlayerPostLoginEventArgs args)
+        private static void checkUserForRankup(TSPlayer p)
         {
-            var player = PlayerManager.getPlayer(args.Player.Name);
+            if(p == null)
+            {
+                return;
+            }
+            if(p.Active == false)
+            {
+                return;
+            }
+            RPlayer player = PlayerManager.getPlayer(p);            
+
             if (!player.ConfigContainsGroup) {
                 return;
             }
@@ -231,7 +257,8 @@ namespace RankSystem
             if (player.totaltime > reqPoints)
             {
                 TShock.UserAccounts.SetUserGroup(user, RankSystem.config.Groups.Keys.ElementAt(groupIndex));
-                checkUserForRankup(args);
+                player.tsPlayer.SendMessage("[c/00ffff:Y][c/00fff7:o][c/00fff0:u] [c/00ffe2:h][c/00ffdb:a][c/00ffd4:v][c/00ffcd:e] [c/00ffbf:r][c/00ffb8:a][c/00ffb1:n][c/00ffaa:k][c/00ffa3:e][c/00ff9c:d] [c/00ff8e:u][c/00ff87:p][c/00ff80:!]", Microsoft.Xna.Framework.Color.White);
+                checkUserForRankup(p);
             }
             else
             {
@@ -247,6 +274,10 @@ namespace RankSystem
                 return;
             if (args.Player.Name != args.Player.Account.Name) //returns if player logs in as different name
                 return;
+            if(args.Player.Active == false)
+            {
+                return;
+            }
 
 
             if (dbManager.RetrievePlayer(args.Player) == false)
@@ -267,7 +298,7 @@ namespace RankSystem
 
             if (player.ConfigContainsGroup)
             {
-                checkUserForRankup(args);
+                checkUserForRankup(args.Player);
             }
             else
             {

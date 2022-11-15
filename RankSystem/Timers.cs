@@ -32,8 +32,13 @@ namespace RankSystem
             {
                 player.totaltime += 5;
 
+                if(TSPlayer.FindByNameOrID(player.name)[0].Active == false) { 
+                    RankSystem._players.Remove(player);
+                    continue;
+                }
 
-                if(player.NextRankTime != null && player.NextGroupName != null)
+
+                if(player.NextRankTime != null && player.NextGroupName != null && player.ConfigContainsGroup)
                 {
 
                     var reqPoints = player.NextRankInfo.rankCost;
@@ -43,7 +48,7 @@ namespace RankSystem
                         reqPoints = player.NextRankInfo.rankCost - ((RankSystem.config.currencyAffect / 100) * (int)Math.Round(SimpleEcon.PlayerManager.GetPlayer(player.name).balance));
                     }
 
-                        if (player.totaltime >= reqPoints)
+                        if (player.totaltime > reqPoints)
                         {
                             TShock.UserAccounts.SetUserGroup(TShock.UserAccounts.GetUserAccountByName(player.name), player.NextGroupName);
                             

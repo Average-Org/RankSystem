@@ -59,7 +59,6 @@ namespace RankSystem
             this.tsPlayer = TSPlayer.FindByNameOrID(name)[0];
             this.firstlogin = DateTime.Parse(this.tsPlayer.Account.Registered);
             this.lastlogin = DateTime.UtcNow;
-            this.totaltime = totaltime;
         }
 
 
@@ -134,7 +133,7 @@ namespace RankSystem
                     return null;
 
                 if (NextGroupName == "max rank achieved")
-                    return "max rank achieved";
+                    return null;
 
                 var reqPoints = NextRankInfo.rankCost;
 
