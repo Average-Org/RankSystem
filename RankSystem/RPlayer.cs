@@ -71,7 +71,14 @@ namespace RankSystem
             this.lastlogin = DateTime.UtcNow;
         }
 
+        public void giveDrops(TSPlayer player)
+        {
+            foreach (KeyValuePair<int, int> prop in RankInfo.rankUnlocks)
+            {
+                player.GiveItem(prop.Key, prop.Value, 0);
+            }
 
+        }
         public string TotalRegisteredTime
         {
             get
@@ -152,7 +159,7 @@ namespace RankSystem
         {
             get
             {
-                return ConfigContainsGroup ? (RankInfo.nextGroup == Group ? new RankInfo("max rank", 0) : RankSystem.config.Groups[RankInfo.nextGroup]) : new RankInfo("none", 0);
+                return ConfigContainsGroup ? (RankInfo.nextGroup == Group ? new RankInfo("max rank", 0, null) : RankSystem.config.Groups[RankInfo.nextGroup]) : new RankInfo("none", 0, null);
             }
         }
 

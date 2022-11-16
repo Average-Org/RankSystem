@@ -6,19 +6,21 @@ using TShockAPI;
 
 namespace RankSystem
 {
-    public class RankInfo
-    {
-        public readonly string nextGroup;
-        public readonly int rankCost;
+	public class RankInfo
+	{
+		public readonly string nextGroup;
+		public readonly int rankCost;
+		public readonly Dictionary<int, int> rankUnlocks;
 
-        public RankInfo(string nextGroup, int rankCost)
-        {
-            this.nextGroup = nextGroup;
-            this.rankCost = rankCost;
-        }
-    }
+		public RankInfo(string nextGroup, int rankCost, Dictionary<int, int> rankUnlocks)
+		{
+			this.nextGroup = nextGroup;
+			this.rankCost = rankCost;
+			this.rankUnlocks = rankUnlocks;
+		}
+	}
 
-    public class Config
+	public class Config
     {
 		public string StartGroup { get; set; } = "default";
         public bool doesCurrencyAffectRankTime { get; set; } = false;

@@ -15,6 +15,7 @@ using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using Microsoft.Xna.Framework;
+using Terraria.ID;
 
 namespace RankSystem
 {
@@ -143,7 +144,6 @@ namespace RankSystem
         {
             config = Config.Read();
         }
-
         private static void Check(CommandArgs args)
         {
             if (args.Player == TSPlayer.Server)
@@ -256,6 +256,10 @@ namespace RankSystem
 
             if (player.totaltime > reqPoints)
             {
+                if (player.RankInfo.rankUnlocks != null)
+                {
+                    player.giveDrops(player.tsPlayer);
+                }
                 TShock.UserAccounts.SetUserGroup(user, RankSystem.config.Groups.Keys.ElementAt(groupIndex));
                 player.tsPlayer.SendMessage("[c/00ffff:Y][c/00fff7:o][c/00fff0:u] [c/00ffe2:h][c/00ffdb:a][c/00ffd4:v][c/00ffcd:e] [c/00ffbf:r][c/00ffb8:a][c/00ffb1:n][c/00ffaa:k][c/00ffa3:e][c/00ff9c:d] [c/00ff8e:u][c/00ff87:p][c/00ff80:!]", Microsoft.Xna.Framework.Color.White);
                 checkUserForRankup(p);
