@@ -92,13 +92,8 @@ namespace RankSystem
             ServerApi.Hooks.ServerLeave.Register(this, OnLeave);
             GeneralHooks.ReloadEvent += Reload;
             PlayerHooks.PlayerPostLogin += PostLogin;
-            PlayerHooks.PlayerLogout += PlayerLogout;
         }
 
-        private void PlayerLogout(PlayerLogoutEventArgs e)
-        {
-            throw new NotImplementedException();
-        }
 
         protected override void Dispose(bool disposing)
         {
@@ -237,9 +232,14 @@ namespace RankSystem
             {
                 return;
             }
+
             RPlayer player = PlayerManager.getPlayer(p);            
 
             if (!player.ConfigContainsGroup) {
+                return;
+            }
+            if (player.NextRankInfo == null)
+            {
                 return;
             }
 
