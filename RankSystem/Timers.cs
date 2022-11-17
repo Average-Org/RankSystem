@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Timers;
 using TShockAPI;
 
@@ -7,25 +9,20 @@ namespace RankSystem
 {
     class Timers
     {
-        private Timer _uTimer;
-        private Timer _bTimer;
 
-        public Timers()
+        public static async void RankUpdateTimer()
         {
-            _uTimer = new Timer(5 * 1000); //update ranks every 5 seconds
-            _bTimer = new Timer(5 * 60 * 1000); //backup every 5 min
+            await Task.Delay(5 * 1000);
+            UpdateTimer();
         }
 
-        public void Start()
+        public static async void BackupThreadTimer()
         {
-            _uTimer.Enabled = true;
-            _uTimer.Elapsed += UpdateTimer;
-
-            _bTimer.Enabled = true;
-            _bTimer.Elapsed += BackupTimer;
+            await Task.Delay(5 * 60 * 1000);
+            BackupTimer();
         }
 
-        private static void UpdateTimer(object sender, ElapsedEventArgs args)
+        private static void UpdateTimer()
         {
 
             foreach (RPlayer player in RankSystem._players)
@@ -68,13 +65,15 @@ namespace RankSystem
 
 
 
-
+                RankUpdateTimer();
             }
+            
         }
 
-        private static void BackupTimer(object sender, ElapsedEventArgs args)
+        private static void BackupTimer()
         {
             RankSystem.dbManager.SaveAllPlayers();
+            BackupThreadTimer();
         }
     }
 }

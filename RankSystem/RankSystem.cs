@@ -115,8 +115,8 @@ namespace RankSystem
         {
             config = Config.Read();
 
-            _timers = new Timers();
-            _timers.Start();
+            Timers.RankUpdateTimer();
+            Timers.BackupThreadTimer();
 
             if (String.Equals(config.StartGroup, config.Groups.Keys.ToList()[0], StringComparison.CurrentCultureIgnoreCase))
             {
