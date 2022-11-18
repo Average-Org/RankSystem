@@ -138,6 +138,12 @@ namespace RankSystem
         }
         private static void Check(CommandArgs args)
         {
+            foreach(Group group in config.Groups)
+            {
+                Console.WriteLine(group.name);
+
+            }
+
             if (args.Player == TSPlayer.Server)
             {
                 return;
@@ -147,6 +153,7 @@ namespace RankSystem
                 var str = string.Join(" ", args.Parameters);
                 var player = PlayerManager.getPlayer(str);
                 var tsplayers = TShock.UserAccounts.GetUserAccountsByName(str);
+                Console.WriteLine(player.GroupIndex);
 
                 if (player == null)
                 {

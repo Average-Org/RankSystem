@@ -32,6 +32,35 @@ namespace RankSystem
         public DateTime firstlogin { get; set; }
         public DateTime lastlogin { get; set; }
         public string Group { get { return tsPlayer.Group.Name; } }
+        public int GroupIndex
+        {
+            get
+            {
+                return RankSystem.config.Groups.IndexOf(RankSystem.config.Groups.Find(x => x.name == Group));
+            }
+        }
+
+        public bool ConfigContainsGroup
+        {
+
+            get
+            {
+
+                if (RankSystem.config.StartGroup == Group)
+                {
+                    return true;
+                }
+
+                if (RankSystem.config.Groups.Any(x => x.name == Group))
+                {
+                    return true;
+                }
+
+
+                return false;
+            }
+        }
+
         public RankInfo RankInfo
         {
             get
@@ -42,19 +71,12 @@ namespace RankSystem
                     return RankSystem.config.Groups[0].info;
                 }
 
-               foreach(Group group in RankSystem.config.Groups)
+                if (!ConfigContainsGroup)
                 {
-                    if(group.name == Group)
-                    {
-                        return group.info;
-                    }
-                    else
-                    {
-                        continue;
-                    }
+                    return null;
                 }
 
-                return null;
+                return RankSystem.config.Groups[GroupIndex].info;
             }
         }
         public int totaltime { get; set; }
@@ -80,6 +102,11 @@ namespace RankSystem
 
         public void giveDrops(TSPlayer player)
         {
+            if(RankInfo.rankUnlocks.Count == 0)
+            {
+                return;
+            }
+
             foreach (KeyValuePair<int, int> prop in RankInfo.rankUnlocks)
             {
                 player.GiveItem(prop.Key, prop.Value, 0);
@@ -136,21 +163,8 @@ namespace RankSystem
 
                 if (!ConfigContainsGroup)
                     return "";
-                if (RankSystem.config.Groups.Count == GroupIndex)
-                {
-                    return "";
-                }
-
 
                 return RankInfo.nextGroup;
-            }
-        }
-
-        public int GroupIndex
-        {
-            get
-            {
-                return RankSystem.config.Groups.IndexOf(RankSystem.config.Groups.Find(x => x.name == Group));
             }
         }
 
@@ -181,7 +195,17 @@ namespace RankSystem
         {
             get
             {
-                return ConfigContainsGroup ? (RankInfo.nextGroup == Group ? new RankInfo("max rank", 0, null) : RankSystem.config.Groups[GroupIndex+1].info) : new RankInfo("none", 0, null);
+                if (!ConfigContainsGroup)
+                {
+                    return null;
+                }
+
+                if(RankSystem.config.Groups.Count == GroupIndex)
+                {
+                    return null;
+                }
+
+                return RankSystem.config.Groups[GroupIndex + 1].info;
             }
         }
 
@@ -198,25 +222,6 @@ namespace RankSystem
 
         private static readonly Regex CleanCommandRegex = new Regex(@"^\/?(\w*\w)");
 
-        public bool ConfigContainsGroup
-        {
 
-
-            get {
-
-                if (RankSystem.config.StartGroup == Group)
-                {
-                    return true;
-                }
-
-                if (RankSystem.config.Groups.Any(x => x.name == name))
-                {
-                    return true;
-                }
-
-
-                return false;
-            }
-        }
     }
 }

@@ -8,9 +8,9 @@ namespace RankSystem
 {
 	public class RankInfo
 	{
-		public readonly string nextGroup;
-		public readonly int rankCost;
-		public readonly Dictionary<int, int> rankUnlocks;
+		public string nextGroup;
+		public int rankCost;
+		public Dictionary<int, int> rankUnlocks;
 
 		public RankInfo(string nextGroup, int rankCost, Dictionary<int, int> rankUnlocks)
 		{
@@ -38,7 +38,7 @@ namespace RankSystem
         public bool doesCurrencyAffectRankTime { get; set; } = false;
         public int currencyAffect { get; set; } = 1;
 
-       public List<Group> Groups { get; set; } = new List<Group>() { new Group("member", new RankInfo("vip", 15000, new Dictionary<int, int>()  ))};	
+       public List<Group> Groups { get; set; } = new List<Group>();	
 
 		public void Write()
 		{
