@@ -9,33 +9,69 @@ namespace RankSystem
 {
     class Timers
     {
+        public static bool hasStarted = false;
+        public static bool rankRunning = false;
+        public static bool backupRunning = false;
 
         public static async void RankUpdateTimer()
         {
-            await Task.Delay(5 * 1000);
-            UpdateTimer();
+           if(hasStarted == true && rankRunning == false)
+            {
+                rankRunning = true;
+                await Task.Delay(5 * 1000);
+                UpdateTimer();
+                return;
+            }
+            return;
         }
 
         public static async void BackupThreadTimer()
         {
-            await Task.Delay(5 * 60 * 1000);
-            BackupTimer();
+            if(hasStarted == true && backupRunning == false)
+            {
+                backupRunning = true;
+                await Task.Delay(5 * 60 * 1000);
+                BackupTimer();
+                return;
+
+            }
+            return;
         }
 
         private static void UpdateTimer()
         {
+            if (TShock.Utils.GetActivePlayerCount() < 1)
+            {
+                hasStarted = false;
+                rankRunning = false;
+                backupRunning = false;
+                return;
+            }
+
+            if (RankSystem._players.Count < 1)
+            {
+                return;
+            }
+
+            if (hasStarted == false)
+            {
+                return;
+            }
+
 
             foreach (RPlayer player in RankSystem._players)
             {
+
                 player.totaltime += 5;
 
-                if(TSPlayer.FindByNameOrID(player.name)[0].Active == false) { 
-                    RankSystem._players.Remove(player);
+
+                if (player.NextGroupName == null)
+                {
                     continue;
                 }
 
 
-                if(player.NextRankTime != null && player.NextGroupName != null && player.ConfigContainsGroup)
+                if (player.NextRankTime != null && player.NextGroupName != null && player.ConfigContainsGroup)
                 {
 
                     var reqPoints = player.NextRankInfo.rankCost;
@@ -64,15 +100,28 @@ namespace RankSystem
                 }
 
 
-
-                RankUpdateTimer();
             }
-            
+
+            rankRunning = false;
+            RankUpdateTimer();
+            return;
+
         }
 
         private static void BackupTimer()
         {
+            if (RankSystem._players.Count == 0)
+            {
+                return;
+            }
+            if(hasStarted == false)
+            {
+                return;
+            }
+
+
             RankSystem.dbManager.SaveAllPlayers();
+            backupRunning = false;
             BackupThreadTimer();
         }
     }

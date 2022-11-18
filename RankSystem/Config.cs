@@ -20,15 +20,25 @@ namespace RankSystem
 		}
 	}
 
+	public class Group
+    {
+		public string name;
+		public RankInfo info;
+
+		public Group(string name, RankInfo info)
+        {
+			this.name = name;
+			this.info = info;
+        }
+    }
+
 	public class Config
     {
 		public string StartGroup { get; set; } = "default";
         public bool doesCurrencyAffectRankTime { get; set; } = false;
         public int currencyAffect { get; set; } = 1;
 
-        public Dictionary<string, RankInfo> Groups { get; set; } = new Dictionary<string, RankInfo> //new Dictionary<string, RankInfo>();
-        {
-        };
+       public List<Group> Groups { get; set; } = new List<Group>() { new Group("member", new RankInfo("vip", 15000, new Dictionary<int, int>()  ))};	
 
 		public void Write()
 		{

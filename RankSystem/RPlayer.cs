@@ -39,12 +39,19 @@ namespace RankSystem
 
                 if(Group == RankSystem.config.StartGroup)
                 {
-                    return RankSystem.config.Groups.Values.ElementAt(0);
+                    return RankSystem.config.Groups[0].info;
                 }
 
-                if(RankSystem.config.Groups.ContainsKey(Group))
+               foreach(Group group in RankSystem.config.Groups)
                 {
-                    return RankSystem.config.Groups.First(g => g.Key == Group).Value;
+                    if(group.name == Group)
+                    {
+                        return group.info;
+                    }
+                    else
+                    {
+                        continue;
+                    }
                 }
 
                 return null;
@@ -62,12 +69,12 @@ namespace RankSystem
         }
 
 
-        public RPlayer(string name, int time, DateTime firstlogin)
+        public RPlayer(string name, int time)
         {
             this.name = name;
             this.totaltime = time;
             this.tsPlayer = TSPlayer.FindByNameOrID(name)[0];
-            this.firstlogin = firstlogin;
+            this.firstlogin = DateTime.Parse(this.tsPlayer.Account.Registered);
             this.lastlogin = DateTime.UtcNow;
         }
 
@@ -101,6 +108,10 @@ namespace RankSystem
         {
             get
             {
+                if(totaltime == 0)
+                {
+                    return "0 seconds";
+                }
                 var ts = new TimeSpan(0, 0, 0, totaltime);
                 return ts.ElapsedString();
             }
@@ -120,15 +131,26 @@ namespace RankSystem
         {
             get
             {
-                if (RankSystem.config.Groups.Keys.ElementAt(RankSystem.config.Groups.Count - 1) == Group)
-                    return null;
+                if (RankSystem.config.Groups.Count == GroupIndex)
+                    return "";
 
                 if (!ConfigContainsGroup)
-                    return null;
-
+                    return "";
+                if (RankSystem.config.Groups.Count == GroupIndex)
+                {
+                    return "";
+                }
 
 
                 return RankInfo.nextGroup;
+            }
+        }
+
+        public int GroupIndex
+        {
+            get
+            {
+                return RankSystem.config.Groups.IndexOf(RankSystem.config.Groups.Find(x => x.name == Group));
             }
         }
 
@@ -139,7 +161,7 @@ namespace RankSystem
                 if (!ConfigContainsGroup)
                     return null;
 
-                if (NextGroupName == "max rank achieved")
+                if (NextGroupName == null)
                     return null;
 
                 var reqPoints = NextRankInfo.rankCost;
@@ -159,7 +181,7 @@ namespace RankSystem
         {
             get
             {
-                return ConfigContainsGroup ? (RankInfo.nextGroup == Group ? new RankInfo("max rank", 0, null) : RankSystem.config.Groups[RankInfo.nextGroup]) : new RankInfo("none", 0, null);
+                return ConfigContainsGroup ? (RankInfo.nextGroup == Group ? new RankInfo("max rank", 0, null) : RankSystem.config.Groups[GroupIndex+1].info) : new RankInfo("none", 0, null);
             }
         }
 
@@ -170,7 +192,7 @@ namespace RankSystem
                 if (!ConfigContainsGroup)
                     return null;
 
-                return (RankSystem.config.Groups.Keys.ToList().IndexOf(Group) + 1) + " / " + RankSystem.config.Groups.Keys.Count;
+                return (GroupIndex + 1 + " / " + RankSystem.config.Groups.Count);
             }
         }
 
@@ -181,15 +203,17 @@ namespace RankSystem
 
 
             get {
-                if (RankSystem.config.Groups.Keys.Contains(Group))
-                {
-                    return true;
-                }
 
                 if (RankSystem.config.StartGroup == Group)
                 {
                     return true;
                 }
+
+                if (RankSystem.config.Groups.Any(x => x.name == name))
+                {
+                    return true;
+                }
+
 
                 return false;
             }

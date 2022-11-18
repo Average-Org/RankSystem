@@ -115,10 +115,7 @@ namespace RankSystem
         {
             config = Config.Read();
 
-            Timers.RankUpdateTimer();
-            Timers.BackupThreadTimer();
-
-            if (String.Equals(config.StartGroup, config.Groups.Keys.ToList()[0], StringComparison.CurrentCultureIgnoreCase))
+            if (String.Equals(config.StartGroup, config.Groups[0].name, StringComparison.CurrentCultureIgnoreCase))
             {
                 TShock.Log.ConsoleError("[RankSystem] Initialization cancelled due to config error: " + "StartGroup is same as first rank name");
                 ServerApi.Hooks.GameInitialize.Deregister(this, OnInitialize);
@@ -156,11 +153,15 @@ namespace RankSystem
                     args.Player.SendErrorMessage("Invalid player!");
                     return;
                 }
+                if(player.NextGroupName == null)
+                {
+                    return;
+                }
                 args.Player.SendMessage($"{player.name} has played for: {player.TotalTime}", Color.IndianRed);
 
 
                 var newGroup = player.NextGroupName;
-                if(player.NextGroupName != null)
+                if(player.NextGroupName != "")
                 {
                     args.Player.SendMessage($"{player.name}'s next rank ({player.NextGroupName}) will unlock in: {player.NextRankTime}", Color.Orange);
                     return;
@@ -176,7 +177,7 @@ namespace RankSystem
                 args.Player.SendMessage($"You have played for: {player.TotalTime}", Color.IndianRed);
 
                 var newGroup = player.NextGroupName;
-                if (player.NextGroupName != null)
+                if (player.NextGroupName != "")
                 {
                     args.Player.SendMessage($"Your next rank ({player.NextGroupName}) will unlock in: {player.NextRankTime}", Color.Orange);
                     return;
@@ -220,6 +221,12 @@ namespace RankSystem
 
             dbManager.SavePlayer(player);
             _players.Remove(player);
+
+            if (Timers.hasStarted == true && TShock.Utils.GetActivePlayerCount() < 1)
+            {
+                _players.Clear();
+                Timers.hasStarted = false;
+            }
         }
 
         private static void checkUserForRankup(TSPlayer p)
@@ -238,13 +245,13 @@ namespace RankSystem
             if (!player.ConfigContainsGroup) {
                 return;
             }
-            if (player.NextRankInfo == null)
+            if (string.IsNullOrEmpty(player.NextGroupName))
             {
                 return;
             }
 
             var user = TShock.UserAccounts.GetUserAccountByName(player.name);
-            var groupIndex = RankSystem.config.Groups.Keys.ToList().IndexOf(player.Group) + 1;
+            var groupIndex = player.GroupIndex;
 
 
             var reqPoints = player.NextRankInfo.rankCost;
@@ -260,7 +267,7 @@ namespace RankSystem
                 {
                     player.giveDrops(player.tsPlayer);
                 }
-                TShock.UserAccounts.SetUserGroup(user, RankSystem.config.Groups.Keys.ElementAt(groupIndex));
+                TShock.UserAccounts.SetUserGroup(user, RankSystem.config.Groups[groupIndex].name);
                 player.tsPlayer.SendMessage("[c/00ffff:Y][c/00fff7:o][c/00fff0:u] [c/00ffe2:h][c/00ffdb:a][c/00ffd4:v][c/00ffcd:e] [c/00ffbf:r][c/00ffb8:a][c/00ffb1:n][c/00ffaa:k][c/00ffa3:e][c/00ff9c:d] [c/00ff8e:u][c/00ff87:p][c/00ff80:!]", Microsoft.Xna.Framework.Color.White);
                 checkUserForRankup(p);
             }
@@ -274,6 +281,7 @@ namespace RankSystem
 
         private static void PostLogin(PlayerPostLoginEventArgs args)
         {
+
             if (args.Player == null)
                 return;
             if (args.Player.Name != args.Player.Account.Name) //returns if player logs in as different name
@@ -282,9 +290,13 @@ namespace RankSystem
             {
                 return;
             }
+            if(args.Player.IsLoggedIn == false)
+            {
+                return;
+            }
 
 
-            if (dbManager.RetrievePlayer(args.Player) == false)
+            if (dbManager.CheckRankExist(args.Player) == false)
             {
                 var n = new RPlayer(args.Player.Name);
                 _players.Add(n);
@@ -292,13 +304,24 @@ namespace RankSystem
             }
             else
             {
-                dbManager.RetrievePlayer(args.Player);
+                var p = dbManager.GrabPlayer(args.Player);
+                _players.Add(p);
+
             }
 
+      
             var player = PlayerManager.getPlayer(args.Player.Name);
 
+            if (Timers.hasStarted == false && TShock.Utils.GetActivePlayerCount() > 0)
+            {
+                Timers.hasStarted = true;
+                Timers.RankUpdateTimer();
+                Timers.BackupThreadTimer();
+            }
+
+
             if (args.Player.Group.Name == config.StartGroup) //starting rank/new player
-                TShock.UserAccounts.SetUserGroup(TShock.UserAccounts.GetUserAccountByName(args.Player.Account.Name), config.Groups.Keys.ToList()[0]); //AutoStarts the player to the config's first rank.
+                TShock.UserAccounts.SetUserGroup(TShock.UserAccounts.GetUserAccountByName(args.Player.Account.Name), config.Groups[0].name); //AutoStarts the player to the config's first rank.
 
             if (player.ConfigContainsGroup)
             {

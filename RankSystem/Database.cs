@@ -21,7 +21,6 @@ namespace RankSystem
                 new SqlColumn("ID", MySqlDbType.Int32) { Primary = true, AutoIncrement = true },
                 new SqlColumn("Name", MySqlDbType.VarChar, 50) { Unique = true },
                 new SqlColumn("Time", MySqlDbType.Int32),
-                new SqlColumn("FirstLogin", MySqlDbType.DateTime),
                 new SqlColumn("LastLogin", MySqlDbType.DateTime)
                 );
             sqlCreator.EnsureTableStructure(table);
@@ -29,7 +28,7 @@ namespace RankSystem
 
         public bool InsertPlayer(RPlayer player)
         {
-            return _db.Query("INSERT INTO RankSystem (Name, Time, FirstLogin, Lastlogin)" + "VALUES (@0, @1, @2, @3)", player.name, player.totaltime, player.firstlogin, player.lastlogin) != 0; 
+            return _db.Query("INSERT INTO RankSystem (Name, Time, Lastlogin)" + "VALUES (@0, @1, @2)", player.name, player.totaltime, player.lastlogin) != 0; 
         }
         
 
@@ -51,7 +50,7 @@ namespace RankSystem
                 SavePlayer(player);
         }
 
-        public bool RetrievePlayer(TSPlayer player)
+        public bool CheckRankExist(TSPlayer player)
         {
             using (var reader = _db.QueryReader("SELECT * FROM RankSystem WHERE Name = @0", player.Name))
             {
@@ -59,13 +58,28 @@ namespace RankSystem
                 {
                     var name = reader.Get<string>("Name");
                     var time = reader.Get<int>("Time");
-                    var firstlogin = reader.Get<DateTime>("FirstLogin");
                     var lastlogin = reader.Get<DateTime>("LastLogin");
 
-                    RankSystem._players.Add(new RPlayer(name, time, firstlogin));
+                    RankSystem._players.Add(new RPlayer(name, time));
                     return true;
                 }
                 return false;
+            }
+        }
+
+        public RPlayer GrabPlayer(TSPlayer player)
+        {
+            using (var reader = _db.QueryReader("SELECT * FROM RankSystem WHERE Name = @0", player.Name))
+            {
+                while (reader.Read())
+                {
+                    var name = reader.Get<string>("Name");
+                    var time = reader.Get<int>("Time");
+                    var lastlogin = reader.Get<DateTime>("LastLogin");
+
+                    return new RPlayer(name, time);
+                }
+                return null;
             }
         }
     }
