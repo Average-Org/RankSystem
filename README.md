@@ -14,24 +14,28 @@ This is a complete rewrite of another plugin I originally updated, but then star
 
 ```json
 {
+  "Groups": [
+    {
+      "name": "vip",
+      "info": {
+        "nextGroup": "trusted",
+        "rankCost": 15000,
+        "rankUnlocks": {}
+      }
+    },
+      {
+        "name": "trusted",
+        "info": {
+          "nextGroup": "admin",
+          "rankCost": 65000,
+          "rankUnlocks": {}
+        }
+  }
+  ],
   "StartGroup": "default",
-  "doesCurrencyAffectRankTime": true,
-  "currencyAffect": 1,
-  "Groups": {
-    "member": {
-      "nextGroup": "frequent",
-      "rankCost": 5000
-    },
-    "frequent": {
-      "nextGroup": "notable",
-      "rankCost": 15000
-    },
-    "notable": {
-      "nextGroup": "fabled",
-      "rankCost": 45000
-    }
-    //can add many more if wanted...
-  }}
+  "doesCurrencyAffectRankTime": false,
+  "currencyAffect": 1
+}
 
 ```
 Very easy and self-explanatory, but here is an explanation of each field regardless.
