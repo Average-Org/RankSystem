@@ -138,11 +138,6 @@ namespace RankSystem
         }
         private static void Check(CommandArgs args)
         {
-            foreach(Group group in config.Groups)
-            {
-                Console.WriteLine(group.name);
-
-            }
 
             if (args.Player == TSPlayer.Server)
             {
@@ -236,55 +231,6 @@ namespace RankSystem
             }
         }
 
-        private static void checkUserForRankup(TSPlayer p)
-        {
-            if(p == null)
-            {
-                return;
-            }
-            if(p.Active == false)
-            {
-                return;
-            }
-
-            RPlayer player = PlayerManager.getPlayer(p);            
-
-            if (!player.ConfigContainsGroup) {
-                return;
-            }
-            if (string.IsNullOrEmpty(player.NextGroupName))
-            {
-                return;
-            }
-
-            var user = TShock.UserAccounts.GetUserAccountByName(player.name);
-            var groupIndex = player.GroupIndex;
-
-
-            var reqPoints = player.NextRankInfo.rankCost;
-
-            if (RankSystem.config.doesCurrencyAffectRankTime == true)
-            {
-                reqPoints = player.NextRankInfo.rankCost - ((RankSystem.config.currencyAffect / 100) * (int)Math.Round(SimpleEcon.PlayerManager.GetPlayer(player.name).balance));
-            }
-
-            if (player.totaltime > reqPoints)
-            {
-                if (player.RankInfo.rankUnlocks != null)
-                {
-                    player.giveDrops(player.tsPlayer);
-                }
-                TShock.UserAccounts.SetUserGroup(user, RankSystem.config.Groups[groupIndex].name);
-                player.tsPlayer.SendMessage("[c/00ffff:Y][c/00fff7:o][c/00fff0:u] [c/00ffe2:h][c/00ffdb:a][c/00ffd4:v][c/00ffcd:e] [c/00ffbf:r][c/00ffb8:a][c/00ffb1:n][c/00ffaa:k][c/00ffa3:e][c/00ff9c:d] [c/00ff8e:u][c/00ff87:p][c/00ff80:!]", Microsoft.Xna.Framework.Color.White);
-                checkUserForRankup(p);
-            }
-            else
-            {
-                return;
-            }
-
-
-        }
 
         private static void PostLogin(PlayerPostLoginEventArgs args)
         {
@@ -330,14 +276,6 @@ namespace RankSystem
             if (args.Player.Group.Name == config.StartGroup) //starting rank/new player
                 TShock.UserAccounts.SetUserGroup(TShock.UserAccounts.GetUserAccountByName(args.Player.Account.Name), config.Groups[0].name); //AutoStarts the player to the config's first rank.
 
-            if (player.ConfigContainsGroup)
-            {
-                checkUserForRankup(args.Player);
-            }
-            else
-            {
-                return;
-            }            
         }
 
         private static void Delete(CommandArgs args)
