@@ -1,4 +1,5 @@
-﻿using System;
+﻿using IL.Terraria;
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -101,6 +102,10 @@ namespace RankSystem
                 }
 
                 if (player.NextGroupName == null)
+                {
+                    continue;
+                }
+                if(player.tsPlayer.Group.Name == RankSystem.config.EndGroup)
                 {
                     continue;
                 }

@@ -35,6 +35,7 @@ namespace RankSystem
 	public class Config
     {
 		public string StartGroup { get; set; } = "default";
+		public string EndGroup { get; set; } = "endGroup";
         public bool doesCurrencyAffectRankTime { get; set; } = false;
         public int currencyAffect { get; set; } = 1;
 

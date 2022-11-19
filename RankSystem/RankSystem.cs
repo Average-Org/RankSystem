@@ -203,17 +203,7 @@ namespace RankSystem
 
         private static void OnLeave(LeaveEventArgs args)
         {
-            if (args.Who >= TShock.Players.Length || args.Who < 0)
-            {
-                return;
-            }
-
             var ply = TShock.Players[args.Who];
-
-            if(ply == null)
-            {
-                return;
-            }
 
             if (!ply.IsLoggedIn) return;
 
@@ -222,7 +212,7 @@ namespace RankSystem
                 return;
 
             dbManager.SavePlayer(player);
-            _players.Remove(player);
+            _players.Remove(_players.FirstOrDefault(x => x.name == player.name));
 
             if (Timers.hasStarted == true && TShock.Utils.GetActivePlayerCount() < 1)
             {
