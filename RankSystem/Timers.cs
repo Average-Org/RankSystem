@@ -98,7 +98,11 @@ namespace RankSystem
 
             foreach (RPlayer p in RankSystem._players)
             {
-                var player = PlayerManager.getPlayer(p.name);
+                if(p == null)
+                {
+                    continue;
+                }
+                var player = PlayerManager.getPlayer(p?.name);
                 if(player?.tsPlayer == null)
                 {
                     continue;
