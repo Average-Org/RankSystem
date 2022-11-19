@@ -193,12 +193,57 @@ namespace RankSystem
 
         private static void OnGreet(GreetPlayerEventArgs args)
         {
-            var ply = TShock.Players[args.Who];
-
-            if (ply == null)
+            if (TShock.Players[args.Who] == null)
+            {
                 return;
-            if (ply.IsLoggedIn && ply.ConnectionAlive)
-                PostLogin(new PlayerPostLoginEventArgs(ply));
+            }
+            var p = TShock.Players[args.Who];
+
+            if (p == null)
+                return;
+            if (p.Name != p.Account.Name) //returns if player logs in as different name
+                return;
+            if (p.Active == false)
+            {
+                return;
+            }
+            if (p.IsLoggedIn == false)
+            {
+                return;
+            }
+
+
+            if (dbManager.CheckRankExist(p) == false)
+            {
+                var n = new RPlayer(p.Name);
+                _players.Add(n);
+                dbManager.InsertPlayer(n);
+            }
+            else
+            {
+                var e = dbManager.GrabPlayer(p);
+                _players.Add(e);
+
+            }
+
+
+            var player = PlayerManager.getPlayer(p.Name);
+
+
+
+            if (p.Group.Name == config.StartGroup) //starting rank/new player
+                TShock.UserAccounts.SetUserGroup(TShock.UserAccounts.GetUserAccountByName(p.Account.Name), config.Groups[0].name); //AutoStarts the player to the config's first rank.
+
+
+            if (Timers.hasStarted == false && _players.Count > 0)
+            {
+                Timers.hasStarted = true;
+                Timers.RankUpdateTimer();
+                Timers.BackupThreadTimer();
+            }
+
+
+
         }
 
         private static void OnLeave(LeaveEventArgs args)
@@ -224,47 +269,6 @@ namespace RankSystem
 
         private static void PostLogin(PlayerPostLoginEventArgs args)
         {
-
-            if (args.Player == null)
-                return;
-            if (args.Player.Name != args.Player.Account.Name) //returns if player logs in as different name
-                return;
-            if(args.Player.Active == false)
-            {
-                return;
-            }
-            if(args.Player.IsLoggedIn == false)
-            {
-                return;
-            }
-
-
-            if (dbManager.CheckRankExist(args.Player) == false)
-            {
-                var n = new RPlayer(args.Player.Name);
-                _players.Add(n);
-                dbManager.InsertPlayer(n);
-            }
-            else
-            {
-                var p = dbManager.GrabPlayer(args.Player);
-                _players.Add(p);
-
-            }
-
-      
-            var player = PlayerManager.getPlayer(args.Player.Name);
-
-            if (Timers.hasStarted == false && TShock.Utils.GetActivePlayerCount() > 0)
-            {
-                Timers.hasStarted = true;
-                Timers.RankUpdateTimer();
-                Timers.BackupThreadTimer();
-            }
-
-
-            if (args.Player.Group.Name == config.StartGroup) //starting rank/new player
-                TShock.UserAccounts.SetUserGroup(TShock.UserAccounts.GetUserAccountByName(args.Player.Account.Name), config.Groups[0].name); //AutoStarts the player to the config's first rank.
 
         }
 

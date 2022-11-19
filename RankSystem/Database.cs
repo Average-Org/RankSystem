@@ -60,7 +60,6 @@ namespace RankSystem
                     var time = reader.Get<int>("Time");
                     var lastlogin = reader.Get<DateTime>("LastLogin");
 
-                    RankSystem._players.Add(new RPlayer(name, time));
                     return true;
                 }
                 return false;

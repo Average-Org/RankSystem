@@ -1,4 +1,5 @@
 ﻿using IL.Terraria;
+using NuGet.Protocol;
 using System;
 using System.Linq;
 using System.Threading;
@@ -79,7 +80,7 @@ namespace RankSystem
                 return;
             }
 
-            if (RankSystem._players.Count < 1)
+            if (RankSystem._players?.Count < 1)
             {
                 return;
             }
@@ -89,9 +90,20 @@ namespace RankSystem
                 return;
             }
 
-
-            foreach (RPlayer player in RankSystem._players)
+            if (RankSystem._players?.Any() == false)
             {
+                return;
+            }
+
+
+            foreach (RPlayer p in RankSystem._players)
+            {
+                var player = PlayerManager.getPlayer(p.name);
+                if(player?.tsPlayer == null)
+                {
+                    continue;
+                }
+
 
                 player.totaltime += 5;
 
@@ -101,25 +113,31 @@ namespace RankSystem
                     continue;
                 }
 
-                if (player.NextGroupName == null)
-                {
-                    continue;
-                }
-                if(player.tsPlayer.Group.Name == RankSystem.config.EndGroup)
+                if (player?.NextGroupName == null)
                 {
                     continue;
                 }
 
-                  rankUpUser(player);
-                  
-        
-                
+                if (player?.tsPlayer?.Group?.Name == RankSystem.config.EndGroup)
+                {
+                    continue;
+                }
+
+                if (player?.NextGroupName != "")
+                {
+                    rankUpUser(player);
+                }
+
+
+
+
 
 
             }
 
             rankRunning = false;
             RankUpdateTimer();
+
             return;
 
         }

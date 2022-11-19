@@ -10,16 +10,40 @@ namespace RankSystem
     {
         public static RPlayer getPlayer(TSPlayer player)
         {
+            if (RankSystem._players?.Any() == false)
+            {
+                return null;
+            }
+            if (RankSystem._players?.Any(p => p.name == player.Name) == false)
+            {
+                return null;
+            }
             return RankSystem._players.Find(p => p.name == player.Name);
         }
 
         public static RPlayer getPlayer(string name)
         {
+            if (RankSystem._players?.Any() == false)
+            {
+                return null;
+            }
+            if(RankSystem._players?.Any(p => p.name == name) == false)
+            {
+                return null;
+            }
             return RankSystem._players.Find(p => p.name == name);
         }
 
         public static RPlayer getPlayer(int id)
         {
+            if (RankSystem._players?.Any() == false)
+            {
+                return null;
+            }
+            if (RankSystem._players.Any(p => p.name == TSPlayer.FindByNameOrID("" + id)[0].Name))
+            {
+                return null;
+            }
             return RankSystem._players.Find(p => p.name == TSPlayer.FindByNameOrID("" + id)[0].Name);
         }
 
