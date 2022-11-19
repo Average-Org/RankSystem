@@ -31,13 +31,15 @@ namespace RankSystem
         public string name { get; set; }
         public DateTime firstlogin { get; set; }
         public DateTime lastlogin { get; set; }
-        public string Group { get { return tsPlayer.Group.Name; } }
+        public string Group { get { return tsPlayer.Group.Name; } set { }
+        }
         public int GroupIndex
         {
             get
             {
                 return RankSystem.config.Groups.IndexOf(RankSystem.config.Groups.Find(x => x.name == Group));
             }
+            set { }
         }
 
         public bool ConfigContainsGroup
