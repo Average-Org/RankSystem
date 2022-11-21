@@ -6,39 +6,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using TShockAPI;
+using TShockAPI.CLI;
 
 namespace RankSystem
 {
     class Timers
     {
-        public static bool hasStarted = false;
-        public static bool rankRunning = false;
-        public static bool backupRunning = false;
-
-        public static async void RankUpdateTimer()
-        {
-           if(hasStarted == true && rankRunning == false)
-            {
-                rankRunning = true;
-                await Task.Delay(5 * 1000);
-                UpdateTimer();
-                return;
-            }
-            return;
-        }
-
-        public static async void BackupThreadTimer()
-        {
-            if(hasStarted == true && backupRunning == false)
-            {
-                backupRunning = true;
-                await Task.Delay(5 * 60 * 1000);
-                BackupTimer();
-                return;
-
-            }
-            return;
-        }
 
         private static void rankUpUser(RPlayer player)
         {
@@ -70,22 +43,14 @@ namespace RankSystem
             }
         }
 
-        private static void UpdateTimer()
+        public static void UpdateTimer()
         {
             if (TShock.Utils.GetActivePlayerCount() < 1)
             {
-                hasStarted = false;
-                rankRunning = false;
-                backupRunning = false;
                 return;
             }
 
             if (RankSystem._players?.Count < 1)
-            {
-                return;
-            }
-
-            if (hasStarted == false)
             {
                 return;
             }
@@ -138,29 +103,9 @@ namespace RankSystem
 
 
             }
-
-            rankRunning = false;
-            RankUpdateTimer();
-
             return;
 
         }
 
-        private static void BackupTimer()
-        {
-            if (RankSystem._players.Count == 0)
-            {
-                return;
-            }
-            if(hasStarted == false)
-            {
-                return;
-            }
-
-
-            RankSystem.dbManager.SaveAllPlayers();
-            backupRunning = false;
-            BackupThreadTimer();
-        }
     }
 }

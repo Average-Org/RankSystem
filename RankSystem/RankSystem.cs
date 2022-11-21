@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using Microsoft.Xna.Framework;
 using Terraria.ID;
+using System.Timers;
 
 namespace RankSystem
 {
@@ -25,10 +26,12 @@ namespace RankSystem
         private IDbConnection _db;
         public static Database dbManager;
         public static Config config;
+        public DateTime LastTimelyRun = DateTime.UtcNow;
         private static Timers _timers;
         static HttpClient client = new HttpClient();
         public static List<RPlayer> _players = new List<RPlayer>();
 
+        public static bool timerCheck = false;
         public override string Author
         {
             get { return "Average"; }
@@ -90,10 +93,32 @@ namespace RankSystem
             ServerApi.Hooks.GameInitialize.Register(this, OnInitialize);
             ServerApi.Hooks.NetGreetPlayer.Register(this, OnGreet);
             ServerApi.Hooks.ServerLeave.Register(this, OnLeave);
+            ServerApi.Hooks.GameUpdate.Register(this, OnUpdate);
             GeneralHooks.ReloadEvent += Reload;
             PlayerHooks.PlayerPostLogin += PostLogin;
         }
 
+        private async void OnUpdate(EventArgs args)
+        {
+
+            if (timerCheck == false)
+            {
+                return;
+            }
+
+            if ((DateTime.UtcNow - LastTimelyRun).TotalSeconds >= 5)
+                {
+                    Timers.UpdateTimer();
+                    LastTimelyRun = DateTime.UtcNow;
+                }
+
+            if ((DateTime.UtcNow - LastTimelyRun).TotalMinutes >= 5)
+            {
+                RankSystem.dbManager.SaveAllPlayers();
+                LastTimelyRun = DateTime.UtcNow;
+            }
+    
+        }
 
         protected override void Dispose(bool disposing)
         {
@@ -102,6 +127,7 @@ namespace RankSystem
                 ServerApi.Hooks.NetGreetPlayer.Deregister(this, OnGreet);
                 ServerApi.Hooks.ServerLeave.Deregister(this, OnLeave);
                 ServerApi.Hooks.GameInitialize.Deregister(this, OnInitialize);
+                ServerApi.Hooks.GameUpdate.Deregister(this, OnUpdate);
                 GeneralHooks.ReloadEvent -= Reload;
                 PlayerHooks.PlayerPostLogin -= PostLogin;
 
@@ -235,11 +261,10 @@ namespace RankSystem
                 TShock.UserAccounts.SetUserGroup(TShock.UserAccounts.GetUserAccountByName(p.Account.Name), config.Groups[0].name); //AutoStarts the player to the config's first rank.
 
 
-            if (Timers.hasStarted == false && _players.Count > 0)
+            if (timerCheck == false && _players.Count > 0)
             {
-                Timers.hasStarted = true;
-                Timers.RankUpdateTimer();
-                Timers.BackupThreadTimer();
+                timerCheck = true;
+
             }
 
 
@@ -259,10 +284,10 @@ namespace RankSystem
             dbManager.SavePlayer(player);
             _players.Remove(_players.FirstOrDefault(x => x.name == player.name));
 
-            if (Timers.hasStarted == true && TShock.Utils.GetActivePlayerCount() < 1)
+            if (timerCheck == true && TShock.Utils.GetActivePlayerCount() < 1)
             {
-                _players.Clear();
-                Timers.hasStarted = false;
+                timerCheck = false;
+
             }
         }
 
