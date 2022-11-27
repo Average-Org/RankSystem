@@ -34,6 +34,19 @@ namespace RankSystem
             return RankSystem._players.Find(p => p.name == name);
         }
 
+        public static RPlayer getPlayerFromAccount(string name)
+        {
+            if (RankSystem._players?.Any() == false)
+            {
+                return null;
+            }
+            if (RankSystem._players?.Any(p => p.accountName == name) == false)
+            {
+                return null;
+            }
+            return RankSystem._players.Find(p => p.accountName == name);
+        }
+
         public static RPlayer getPlayer(int id)
         {
             if (RankSystem._players?.Any() == false)
@@ -53,6 +66,7 @@ namespace RankSystem
     {
         public TSPlayer tsPlayer { get; set; }
         public string name { get; set; }
+        public string accountName { get { return tsPlayer.Account.Name; } set { } }
         public DateTime firstlogin { get; set; }
         public DateTime lastlogin { get; set; }
         public string Group { get { return tsPlayer.Group.Name; } set { }

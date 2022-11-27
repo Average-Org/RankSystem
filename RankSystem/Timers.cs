@@ -45,17 +45,17 @@ namespace RankSystem
 
         public static void UpdateTimer()
         {
-            if (TShock.Utils.GetActivePlayerCount() < 1)
+            if (TShock.Utils.GetActivePlayerCount() == 0)
             {
                 return;
             }
 
-            if (RankSystem._players?.Count < 1)
+            if (RankSystem._players.Count == 0)
             {
                 return;
             }
 
-            if (RankSystem._players?.Any() == false)
+            if (RankSystem._players.Any() == false)
             {
                 return;
             }
@@ -67,12 +67,11 @@ namespace RankSystem
                 {
                     continue;
                 }
-                var player = PlayerManager.getPlayer(p?.name);
+                var player = PlayerManager.getPlayer(p.name);
                 if(player?.tsPlayer == null)
                 {
                     continue;
                 }
-
 
                 player.totaltime += 5;
 
