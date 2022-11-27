@@ -223,20 +223,16 @@ namespace RankSystem
 
         private static void OnGreet(PlayerPostLoginEventArgs args)
         {
-            Console.WriteLine("a");
             if (args.Player == null)
             {
                 return;
             }
             var p = args.Player;
-            Console.WriteLine("a");
 
             if (p.IsLoggedIn == false)
                 return;
             if (p.Account.Name == null)
                 return;
-            Console.WriteLine("a");
-
 
             if (dbManager.CheckRankExist(p.Account.Name) == false)
             {
@@ -250,17 +246,12 @@ namespace RankSystem
                 _players.Add(e);
 
             }
-            Console.WriteLine("a");
-
 
             var player = PlayerManager.getPlayerFromAccount(p.Account.Name);
-            Console.WriteLine("a");
-
 
 
             if (p.Group.Name == config.StartGroup) //starting rank/new player
                 TShock.UserAccounts.SetUserGroup(TShock.UserAccounts.GetUserAccountByName(p.Account.Name), config.Groups[0].name); //AutoStarts the player to the config's first rank.
-            Console.WriteLine("a");
 
 
             if (timerCheck == false && _players.Count > 0)
