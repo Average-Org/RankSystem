@@ -56,6 +56,7 @@ namespace RankSystem
 
 				if (!File.Exists(filepath))
 				{
+					config.Groups.Add(new Group("vip", new RankInfo("trusted", 10000, new Dictionary<int, int>())));
 					File.WriteAllText(filepath, JsonConvert.SerializeObject(config, Formatting.Indented));
 				}
 				config = JsonConvert.DeserializeObject<Config>(File.ReadAllText(filepath));

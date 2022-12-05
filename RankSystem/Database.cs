@@ -4,6 +4,7 @@ using System.Linq;
 using MySql.Data.MySqlClient;
 using TShockAPI.DB;
 using TShockAPI;
+using NuGet.Protocol;
 
 namespace RankSystem
 {
@@ -78,8 +79,24 @@ namespace RankSystem
 
                     return new RPlayer(actualPlayer, time);
                 }
-                return null;
             }
+            return null;
+        }
+
+        public RPlayer GrabOfflinePlayer(string name)
+        {
+            using (var reader = _db.QueryReader("SELECT * FROM RankSystem WHERE Name = @0", name))
+            {
+                while (reader.Read())
+                {
+                    var pname = reader.Get<string>("Name");
+                    var time = reader.Get<int>("Time");
+                    var lastlogin = reader.Get<DateTime>("LastLogin");
+
+                    return new RPlayer(name, time, true);
+                }
+            }
+            return null;
         }
     }
 }

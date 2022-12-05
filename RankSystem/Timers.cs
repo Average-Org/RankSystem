@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 using System.Timers;
 using TShockAPI;
 using TShockAPI.CLI;
+using SimpleEcon;
+using System.IO;
+using System.Reflection;
 
 namespace RankSystem
 {
@@ -19,7 +22,11 @@ namespace RankSystem
 
             if (RankSystem.config.doesCurrencyAffectRankTime == true)
             {
-                reqPoints = player.NextRankInfo.rankCost - ((RankSystem.config.currencyAffect / 100) * (int)Math.Round(SimpleEcon.PlayerManager.GetPlayer(player.name).balance));
+                string assemblyFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                if (File.Exists(Path.Combine(assemblyFolder, "SimpleEcon.dll")))
+                {
+                    reqPoints = player.NextRankInfo.rankCost - ((RankSystem.config.currencyAffect / 100) * (int)Math.Round(SimpleEcon.PlayerManager.GetPlayer(player.accountName).balance));
+                }
             }
 
             if (player.totaltime > reqPoints)
@@ -65,11 +72,13 @@ namespace RankSystem
             {
                 if(p == null)
                 {
+                    RankSystem._players.Remove(p);
                     continue;
                 }
-                var player = PlayerManager.getPlayer(p.name);
-                if(player?.tsPlayer == null)
+                var player = p;
+                if(player.tsPlayer.Active == false || player.tsPlayer.IsLoggedIn == false || player.tsPlayer == null)
                 {
+                    RankSystem._players.Remove(p);
                     continue;
                 }
 
@@ -91,9 +100,13 @@ namespace RankSystem
                     continue;
                 }
 
-                if (player?.NextGroupName != "")
+                if (string.IsNullOrEmpty(player.NextGroupName) != true)
                 {
                     rankUpUser(player);
+                }
+                else
+                {
+                    continue;
                 }
 
 

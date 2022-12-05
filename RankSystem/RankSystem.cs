@@ -49,7 +49,7 @@ namespace RankSystem
 
         public override Version Version
         {
-            get { return new Version(1, 0, 1); }
+            get { return new Version(1, 0, 4); }
         }
 
         public RankSystem(Main game)
@@ -91,8 +91,8 @@ namespace RankSystem
 
             dbManager = new Database(_db);
             ServerApi.Hooks.GameInitialize.Register(this, OnInitialize);
+            PlayerHooks.PlayerLogout += OnLeave;
             TShockAPI.Hooks.PlayerHooks.PlayerPostLogin += OnGreet;
-            ServerApi.Hooks.ServerLeave.Register(this, OnLeave);
             ServerApi.Hooks.GameUpdate.Register(this, OnUpdate);
             GeneralHooks.ReloadEvent += Reload;
             PlayerHooks.PlayerPostLogin += PostLogin;
@@ -125,7 +125,7 @@ namespace RankSystem
             if (disposing)
             {
                 TShockAPI.Hooks.PlayerHooks.PlayerPostLogin -= OnGreet;
-                ServerApi.Hooks.ServerLeave.Deregister(this, OnLeave);
+                PlayerHooks.PlayerLogout -= OnLeave;
                 ServerApi.Hooks.GameInitialize.Deregister(this, OnInitialize);
                 ServerApi.Hooks.GameUpdate.Deregister(this, OnUpdate);
                 GeneralHooks.ReloadEvent -= Reload;
@@ -164,46 +164,36 @@ namespace RankSystem
         }
         private static void Check(CommandArgs args)
         {
-
-            if (args.Player == TSPlayer.Server)
-            {
-                return;
-            }
             if (args.Parameters.Count > 0)
             {
-                var str = string.Join(" ", args.Parameters);
-                var p = TSPlayer.FindByNameOrID(str)[0];
-                var player = PlayerManager.getPlayerFromAccount(p.Account.Name);
-
-                Console.WriteLine(player.GroupIndex);
-
-                if (player == null)
+                string str = string.Join("", args.Parameters);
+                var player = dbManager.GrabOfflinePlayer(str);
+                if(player == null)
                 {
-                    args.Player.SendErrorMessage("Invalid player!");
+                    args.Player.SendMessage($"That player does not exist!", Color.IndianRed);
                     return;
                 }
-                if(player.NextGroupName == null)
-                {
-                    return;
-                }
+
                 args.Player.SendMessage($"{player.accountName} has played for: {player.TotalTime}", Color.IndianRed);
 
-
-                var newGroup = player.NextGroupName;
-                if(player.NextGroupName != "")
+                if (player.NextGroupName != "")
                 {
                     args.Player.SendMessage($"{player.accountName}'s next rank ({player.NextGroupName}) will unlock in: {player.NextRankTime}", Color.Orange);
                     return;
                 }
 
                 args.Player.SendMessage($"{player.accountName} is at the final rank!", Color.LightGreen);
+
                 return;
 
             }
             else
             {
+                if (args.Player == TSPlayer.Server)
+                {
+                    return;
+                }
                 var p = args.Player;
-                Console.WriteLine(p.Account.Name);
                 var player = PlayerManager.getPlayerFromAccount(p.Account.Name);
 
                 args.Player.SendMessage($"You have played for: {player.TotalTime}", Color.IndianRed);
@@ -240,7 +230,7 @@ namespace RankSystem
                 _players.Add(n);
                 dbManager.InsertPlayer(n);
             }
-            else
+            else if(dbManager.CheckRankExist(p.Account.Name) == true)
             {
                 var e = dbManager.GrabPlayer(p.Account.Name, p.Name);
                 _players.Add(e);
@@ -259,24 +249,19 @@ namespace RankSystem
                 timerCheck = true;
 
             }
-            Console.WriteLine("a");
 
 
 
         }
 
-        private static void OnLeave(LeaveEventArgs args)
+        private static void OnLeave(PlayerLogoutEventArgs args)
         {
-            var ply = TShock.Players[args.Who];
-
-            if (!ply.IsLoggedIn) return;
-
-            var player = PlayerManager.getPlayer(ply.Name);
+            var player = PlayerManager.getPlayerFromAccount(args.Player.Account.Name);
             if (player == null)
                 return;
 
             dbManager.SavePlayer(player);
-            _players.Remove(_players.FirstOrDefault(x => x.name == player.name));
+            _players.Remove(_players.First(x => x.accountName == args.Player.Account.Name));
 
             if (timerCheck == true && TShock.Utils.GetActivePlayerCount() < 1)
             {
