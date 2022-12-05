@@ -22,11 +22,9 @@ namespace RankSystem
 
             if (RankSystem.config.doesCurrencyAffectRankTime == true)
             {
-                string assemblyFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                if (File.Exists(Path.Combine(assemblyFolder, "SimpleEcon.dll")))
-                {
+              
                     reqPoints = player.NextRankInfo.rankCost - ((RankSystem.config.currencyAffect / 100) * (int)Math.Round(SimpleEcon.PlayerManager.GetPlayer(player.accountName).balance));
-                }
+                
             }
 
             if (player.totaltime > reqPoints)
