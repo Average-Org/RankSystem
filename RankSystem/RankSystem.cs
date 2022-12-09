@@ -91,11 +91,10 @@ namespace RankSystem
 
             dbManager = new Database(_db);
             ServerApi.Hooks.GameInitialize.Register(this, OnInitialize);
-            PlayerHooks.PlayerLogout += OnLeave;
-            TShockAPI.Hooks.PlayerHooks.PlayerPostLogin += OnGreet;
+            PlayerHooks.PlayerLogout += OnLogout;
+            PlayerHooks.PlayerPostLogin += OnLogin;
             ServerApi.Hooks.GameUpdate.Register(this, OnUpdate);
             GeneralHooks.ReloadEvent += Reload;
-            PlayerHooks.PlayerPostLogin += PostLogin;
         }
 
         private void OnUpdate(EventArgs args)
@@ -108,14 +107,14 @@ namespace RankSystem
 
             if ((DateTime.UtcNow - LastTimelyRun).TotalSeconds >= 5)
                 {
-                    Timers.UpdateTimer();
                     LastTimelyRun = DateTime.UtcNow;
-                }
+                    Timers.UpdateTimer();
+                    Console.WriteLine("Updating ranks");
+            }
 
             if ((DateTime.UtcNow - LastTimelyRun).TotalMinutes >= 5)
             {
                 RankSystem.dbManager.SaveAllPlayers();
-                LastTimelyRun = DateTime.UtcNow;
             }
     
         }
@@ -124,12 +123,11 @@ namespace RankSystem
         {
             if (disposing)
             {
-                TShockAPI.Hooks.PlayerHooks.PlayerPostLogin -= OnGreet;
-                PlayerHooks.PlayerLogout -= OnLeave;
+                TShockAPI.Hooks.PlayerHooks.PlayerPostLogin -= OnLogin;
+                PlayerHooks.PlayerLogout -= OnLogout;
                 ServerApi.Hooks.GameInitialize.Deregister(this, OnInitialize);
                 ServerApi.Hooks.GameUpdate.Deregister(this, OnUpdate);
                 GeneralHooks.ReloadEvent -= Reload;
-                PlayerHooks.PlayerPostLogin -= PostLogin;
 
                 dbManager.SaveAllPlayers();
              
@@ -156,6 +154,18 @@ namespace RankSystem
             {
                 HelpText = "Deletes a player's rank from the database"
             });
+            Commands.ChatCommands.Add(new Command("rs.admin", ViewPlayers, "viewplayers")
+            {
+                HelpText = "view list of all 'RPlayers'"
+            });
+        }
+
+        private void ViewPlayers(CommandArgs args)
+        {
+            foreach(RPlayer p in RankSystem._players)
+            {
+                args.Player.SendMessage(p.name, Color.White);
+            }
         }
 
         private static void Reload(ReloadEventArgs args)
@@ -164,6 +174,7 @@ namespace RankSystem
         }
         private static void Check(CommandArgs args)
         {
+            Console.WriteLine("a");
             if (args.Parameters.Count > 0)
             {
                 string str = string.Join("", args.Parameters);
@@ -193,12 +204,17 @@ namespace RankSystem
                 {
                     return;
                 }
+
                 var p = args.Player;
+
                 var player = PlayerManager.getPlayerFromAccount(p.Account.Name);
 
-                args.Player.SendMessage($"You have played for: {player.TotalTime}", Color.IndianRed);
 
-                var newGroup = player.NextGroupName;
+                args.Player.SendMessage($"You have played for: {player.TotalTime}", Color.IndianRed); 
+
+
+                var newGroup = player.NextGroupName; 
+
                 if (player.NextGroupName != "")
                 {
                     args.Player.SendMessage($"Your next rank ({player.NextGroupName}) will unlock in: {player.NextRankTime}", Color.Orange);
@@ -206,38 +222,35 @@ namespace RankSystem
                 }
 
                 args.Player.SendMessage($"You are at the final rank!", Color.LightGreen);
+
                 return;
             }
 
         }
 
-        private static void OnGreet(PlayerPostLoginEventArgs args)
+        private static void OnLogin(PlayerPostLoginEventArgs args)
         {
-            if (args.Player == null)
-            {
-                return;
-            }
             var p = args.Player;
 
-            if (p.IsLoggedIn == false)
-                return;
-            if (p.Account.Name == null)
-                return;
-
-            if (dbManager.CheckRankExist(p.Account.Name) == false)
-            {
-                var n = new RPlayer(p.Account.Name);
-                _players.Add(n);
-                dbManager.InsertPlayer(n);
-            }
-            else if(dbManager.CheckRankExist(p.Account.Name) == true)
+            if (dbManager.CheckRankExist(p.Account.Name) == true)
             {
                 var e = dbManager.GrabPlayer(p.Account.Name, p.Name);
                 _players.Add(e);
 
             }
+            else if(dbManager.CheckRankExist(p.Account.Name) == false)
+            {
+                RPlayer n = new RPlayer(p.Account.Name);
+                _players.Add(n);
+                dbManager.InsertPlayer(n);
+            }
+            else
+            {
+                Console.WriteLine($"ERROR: {p.Name}'s Playtime could not be loaded!");
+            }
+        
 
-            var player = PlayerManager.getPlayerFromAccount(p.Account.Name);
+            RPlayer player = PlayerManager.getPlayerFromAccount(p.Account.Name);
 
 
             if (p.Group.Name == config.StartGroup) //starting rank/new player
@@ -249,32 +262,24 @@ namespace RankSystem
                 timerCheck = true;
 
             }
-
-
-
         }
 
-        private static void OnLeave(PlayerLogoutEventArgs args)
+        private static void OnLogout(PlayerLogoutEventArgs args)
         {
-            var player = PlayerManager.getPlayerFromAccount(args.Player.Account.Name);
+            RPlayer player = PlayerManager.getPlayerFromAccount(args.Player.Account.Name);
             if (player == null)
                 return;
 
             dbManager.SavePlayer(player);
             _players.Remove(_players.First(x => x.accountName == args.Player.Account.Name));
 
-            if (timerCheck == true && TShock.Utils.GetActivePlayerCount() < 1)
+            if (timerCheck == true && TShock.Utils.GetActivePlayerCount() <= 0)
             {
                 timerCheck = false;
 
             }
         }
 
-
-        private static void PostLogin(PlayerPostLoginEventArgs args)
-        {
-
-        }
 
         private static void Delete(CommandArgs args)
         {

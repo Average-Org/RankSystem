@@ -63,13 +63,13 @@ namespace RankSystem
 
                     return true;
                 }
-                return false;
             }
+            return false;
         }
 
-        public RPlayer GrabPlayer(string name, string actualPlayer)
+        public RPlayer GrabPlayer(string accountName, string playerName)
         {
-            using (var reader = _db.QueryReader("SELECT * FROM RankSystem WHERE Name = @0", name))
+            using (var reader = _db.QueryReader("SELECT * FROM RankSystem WHERE Name = @0", accountName))
             {
                 while (reader.Read())
                 {
@@ -77,7 +77,7 @@ namespace RankSystem
                     var time = reader.Get<int>("Time");
                     var lastlogin = reader.Get<DateTime>("LastLogin");
 
-                    return new RPlayer(actualPlayer, time);
+                    return new RPlayer(playerName, time);
                 }
             }
             return null;

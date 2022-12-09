@@ -39,15 +39,7 @@ namespace RankSystem
 
         public static RPlayer getPlayerFromAccount(string name)
         {
-            if (RankSystem._players.Any() == false)
-            {
-                return null;
-            }
-            if (RankSystem._players.Any(p => p.accountName == name) == false)
-            {
-                return null;
-            }
-            return RankSystem._players.Find(p => p.accountName == name);
+            return RankSystem._players.First(p => p.accountName == name);
         }
 
         public static RPlayer getPlayer(int id)
@@ -79,7 +71,7 @@ namespace RankSystem
         {
             get
             {
-                return RankSystem.config.Groups.IndexOf(RankSystem.config.Groups.Find(x => x.name == Group));
+                return RankSystem.config.Groups.FindIndex(x => x.name == Group);
             }
             set { }
         }
@@ -228,6 +220,24 @@ namespace RankSystem
             }
         }
 
+        public RankInfo NextRankInfo
+        {
+            get
+            {
+                if (!ConfigContainsGroup)
+                {
+                    return null;
+                }
+
+                if (RankSystem.config.Groups.Count-1 == GroupIndex)
+                {
+                    return null;
+                }
+
+                return RankSystem.config.Groups[GroupIndex + 1].info;
+            }
+        }
+
         public string NextRankTime
         {
             get
@@ -253,23 +263,6 @@ namespace RankSystem
             }
         }
 
-        public RankInfo NextRankInfo
-        {
-            get
-            {
-                if (!ConfigContainsGroup)
-                {
-                    return null;
-                }
-
-                if(RankSystem.config.Groups.Count == GroupIndex)
-                {
-                    return null;
-                }
-
-                return RankSystem.config.Groups[GroupIndex + 1].info;
-            }
-        }
 
         public string GroupPosition
         {
