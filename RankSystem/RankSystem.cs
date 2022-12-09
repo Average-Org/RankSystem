@@ -179,6 +179,7 @@ namespace RankSystem
             {
                 string str = string.Join("", args.Parameters);
                 var player = dbManager.GrabOfflinePlayer(str);
+
                 if(player == null)
                 {
                     args.Player.SendMessage($"That player does not exist!", Color.IndianRed);
@@ -204,22 +205,33 @@ namespace RankSystem
                 {
                     return;
                 }
+                Console.WriteLine("a");
 
                 var p = args.Player;
+                Console.WriteLine("a");
 
                 var player = PlayerManager.getPlayerFromAccount(p.Account.Name);
+                if (player == null)
+                {
+                    args.Player.SendErrorMessage("Something went wrong!");
+                    return;
+                }
+                Console.WriteLine("a");
 
 
-                args.Player.SendMessage($"You have played for: {player.TotalTime}", Color.IndianRed); 
+                args.Player.SendMessage($"You have played for: {player.TotalTime}", Color.IndianRed);
+                Console.WriteLine("a");
 
 
-                var newGroup = player.NextGroupName; 
+                var newGroup = player.NextGroupName;
+                Console.WriteLine("a");
 
                 if (player.NextGroupName != "")
                 {
                     args.Player.SendMessage($"Your next rank ({player.NextGroupName}) will unlock in: {player.NextRankTime}", Color.Orange);
                     return;
                 }
+                Console.WriteLine("a");
 
                 args.Player.SendMessage($"You are at the final rank!", Color.LightGreen);
 
@@ -230,12 +242,14 @@ namespace RankSystem
 
         private static void OnLogin(PlayerPostLoginEventArgs args)
         {
+            Console.WriteLine("a");
             var p = args.Player;
 
             if (dbManager.CheckRankExist(p.Account.Name) == true)
             {
                 var e = dbManager.GrabPlayer(p.Account.Name, p.Name);
                 _players.Add(e);
+                Console.WriteLine("b");
 
             }
             else if(dbManager.CheckRankExist(p.Account.Name) == false)
@@ -243,19 +257,24 @@ namespace RankSystem
                 RPlayer n = new RPlayer(p.Account.Name);
                 _players.Add(n);
                 dbManager.InsertPlayer(n);
+                Console.WriteLine("a");
+
             }
             else
             {
                 Console.WriteLine($"ERROR: {p.Name}'s Playtime could not be loaded!");
             }
-        
+
+            Console.WriteLine("a");
 
             RPlayer player = PlayerManager.getPlayerFromAccount(p.Account.Name);
+            Console.WriteLine("a");
 
 
             if (p.Group.Name == config.StartGroup) //starting rank/new player
                 TShock.UserAccounts.SetUserGroup(TShock.UserAccounts.GetUserAccountByName(p.Account.Name), config.Groups[0].name); //AutoStarts the player to the config's first rank.
 
+            Console.WriteLine("a");
 
             if (timerCheck == false && _players.Count > 0)
             {

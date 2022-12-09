@@ -80,11 +80,6 @@ namespace RankSystem
 
             foreach (RPlayer player in RankSystem._players)
             {
-                if(player.tsPlayer.Active == false || player.tsPlayer.IsLoggedIn == false || player.tsPlayer == null)
-                {
-                    toRemove.Add(player);
-                    continue;
-                }
 
                 player.totaltime += 5;
 

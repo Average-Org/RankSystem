@@ -57,10 +57,6 @@ namespace RankSystem
             {
                 while (reader.Read())
                 {
-                    var pname = reader.Get<string>("Name");
-                    var time = reader.Get<int>("Time");
-                    var lastlogin = reader.Get<DateTime>("LastLogin");
-
                     return true;
                 }
             }

@@ -39,6 +39,10 @@ namespace RankSystem
 
         public static RPlayer getPlayerFromAccount(string name)
         {
+            if (!RankSystem._players.Any(x => x.name == name)){
+                return null;
+            }
+
             return RankSystem._players.First(p => p.accountName == name);
         }
 
@@ -210,7 +214,7 @@ namespace RankSystem
         {
             get
             {
-                if (RankSystem.config.Groups.Count == GroupIndex)
+                if (RankSystem.config.Groups.Count-1 == GroupIndex)
                     return "";
 
                 if (!ConfigContainsGroup)
@@ -245,7 +249,7 @@ namespace RankSystem
                 if (!ConfigContainsGroup)
                     return null;
 
-                if (NextGroupName == null)
+                if (string.IsNullOrEmpty(NextGroupName))
                     return null;
 
                 var reqPoints = NextRankInfo.rankCost;
