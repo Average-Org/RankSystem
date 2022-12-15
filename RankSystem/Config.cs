@@ -39,6 +39,8 @@ namespace RankSystem
         public bool doesCurrencyAffectRankTime { get; set; } = false;
         public int currencyAffect { get; set; } = 1;
 
+		public bool useAFKSystem { get; set; } = true;
+
        public List<Group> Groups { get; set; } = new List<Group>();	
 
 		public void Write()

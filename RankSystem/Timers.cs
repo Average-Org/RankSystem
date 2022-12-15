@@ -11,6 +11,8 @@ using SimpleEcon;
 using System.IO;
 using System.Reflection;
 using System.Collections.Generic;
+using IL.Terraria.ID;
+using System.Reflection.Metadata.Ecma335;
 
 namespace RankSystem
 {
@@ -80,8 +82,38 @@ namespace RankSystem
 
             foreach (RPlayer player in RankSystem._players)
             {
+                if(RankSystem.config.useAFKSystem == true)
+                {
+
+                    if (player.lastPos == player.tsPlayer.LastNetPosition)
+                    {
+                        player.afk++;
+                    }
+                    else if (player.isAFK == true && player.lastPos != player.tsPlayer.LastNetPosition)
+                    {
+                        player.afk = 0;
+                        player.isAFK = false;
+                        TSPlayer.All.SendInfoMessage($"{player.name} is no longer AFK!");
+                    }
+
+                    player.lastPos = player.tsPlayer.LastNetPosition;
+                    if (player.afk >= 25 && player.isAFK == false)
+                    {
+                        player.isAFK = true;
+                        TSPlayer.All.SendInfoMessage($"{player.name} is now AFK!");
+                        continue;
+                    }
+                    if (player.isAFK == true)
+                    {
+                        continue;
+                    }
+
+                }
+
 
                 player.totaltime += 5;
+                player.afk = 0;
+                player.isAFK = false;
 
 
                 if (!player.ConfigContainsGroup)

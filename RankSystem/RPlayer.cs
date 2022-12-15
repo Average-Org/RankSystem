@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Xna.Framework;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -66,6 +67,13 @@ namespace RankSystem
         public bool offline { get; set; } = false;
         public TSPlayer tsPlayer { get; set; }
         public string name { get; set; }
+
+        public Vector2 lastPos { get; set; }
+
+        public bool isAFK { get; set; }
+
+        public int afk { get; set; }
+
         public string accountName { get { if (offline) { return name; } return tsPlayer.Account.Name; } set { } }
         public DateTime firstlogin { get; set; }
         public DateTime lastlogin { get; set; }
