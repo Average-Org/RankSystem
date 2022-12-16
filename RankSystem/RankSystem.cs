@@ -242,22 +242,27 @@ namespace RankSystem
 
         private static void OnLogin(PlayerPostLoginEventArgs args)
         {
-            Console.WriteLine("a");
             var p = args.Player;
 
             if (dbManager.CheckRankExist(p.Account.Name) == true)
             {
+                if(p == null)
+                {
+                    return;
+                }
                 var e = dbManager.GrabPlayer(p.Account.Name, p.Name);
                 _players.Add(e);
-                Console.WriteLine("b");
 
             }
             else if(dbManager.CheckRankExist(p.Account.Name) == false)
             {
+                if (p == null)
+                {
+                    return;
+                }
                 RPlayer n = new RPlayer(p.Account.Name);
                 _players.Add(n);
                 dbManager.InsertPlayer(n);
-                Console.WriteLine("a");
 
             }
             else
@@ -265,16 +270,13 @@ namespace RankSystem
                 Console.WriteLine($"ERROR: {p.Name}'s Playtime could not be loaded!");
             }
 
-            Console.WriteLine("a");
 
             RPlayer player = PlayerManager.getPlayerFromAccount(p.Account.Name);
-            Console.WriteLine("a");
 
 
             if (p.Group.Name == config.StartGroup) //starting rank/new player
                 TShock.UserAccounts.SetUserGroup(TShock.UserAccounts.GetUserAccountByName(p.Account.Name), config.Groups[0].name); //AutoStarts the player to the config's first rank.
 
-            Console.WriteLine("a");
 
             if (timerCheck == false && _players.Count > 0)
             {
