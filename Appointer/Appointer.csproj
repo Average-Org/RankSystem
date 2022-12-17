@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <BaseOutputPath></BaseOutputPath>
+    <BaseIntermediateOutputPath></BaseIntermediateOutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>J:\Downloads\TShock4.5.18_Terraria1.4.3.6%281%29\ServerPlugins\</OutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="CSF.NET.TShock" Version="1.4.0" />
+    <PackageReference Include="Microsoft.DotNet.UpgradeAssistant.Extensions.Default.Analyzers" Version="0.4.346202">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="OTAPI.Upcoming" Version="3.1.19" />
+    <PackageReference Include="System.Net.Http" Version="4.3.4" />
+    <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
+    <PackageReference Include="TBC.Extensions.Auxiliary" Version="1.0.0" />
+    <PackageReference Include="TSAPI" Version="5.1.2" />
+    <PackageReference Include="TShock" Version="5.1.2" />
+  </ItemGroup>
+</Project>

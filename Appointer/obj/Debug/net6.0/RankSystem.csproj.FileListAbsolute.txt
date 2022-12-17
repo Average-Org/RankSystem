@@ -1,0 +1,12 @@
+J:\Downloads\TShock4.5.18_Terraria1.4.3.6(1)\ServerPlugins\net6.0\HttpServer.dll
+J:\Downloads\TShock4.5.18_Terraria1.4.3.6(1)\ServerPlugins\net6.0\RankSystem.deps.json
+J:\Downloads\TShock4.5.18_Terraria1.4.3.6(1)\ServerPlugins\net6.0\RankSystem.dll
+J:\Downloads\TShock4.5.18_Terraria1.4.3.6(1)\ServerPlugins\net6.0\RankSystem.pdb
+C:\Users\Julian\Documents\GitHub\RankSystem\RankSystem\obj\Debug\net6.0\RankSystem.csproj.AssemblyReference.cache
+C:\Users\Julian\Documents\GitHub\RankSystem\RankSystem\obj\Debug\net6.0\RankSystem.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Julian\Documents\GitHub\RankSystem\RankSystem\obj\Debug\net6.0\RankSystem.csproj.CoreCompileInputs.cache
+C:\Users\Julian\Documents\GitHub\RankSystem\RankSystem\obj\Debug\net6.0\RankSystem.csproj.CopyComplete
+C:\Users\Julian\Documents\GitHub\RankSystem\RankSystem\obj\Debug\net6.0\RankSystem.dll
+C:\Users\Julian\Documents\GitHub\RankSystem\RankSystem\obj\Debug\net6.0\refint\RankSystem.dll
+C:\Users\Julian\Documents\GitHub\RankSystem\RankSystem\obj\Debug\net6.0\RankSystem.pdb
+C:\Users\Julian\Documents\GitHub\RankSystem\RankSystem\obj\Debug\net6.0\ref\RankSystem.dll
