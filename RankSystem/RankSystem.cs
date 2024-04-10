@@ -109,7 +109,6 @@ namespace RankSystem
                 {
                     LastTimelyRun = DateTime.UtcNow;
                     Timers.UpdateTimer();
-                    Console.WriteLine("Updating ranks");
             }
 
             if ((DateTime.UtcNow - LastTimelyRun).TotalMinutes >= 5)
@@ -174,7 +173,6 @@ namespace RankSystem
         }
         private static void Check(CommandArgs args)
         {
-            Console.WriteLine("a");
             if (args.Parameters.Count > 0)
             {
                 string str = string.Join("", args.Parameters);
@@ -205,10 +203,8 @@ namespace RankSystem
                 {
                     return;
                 }
-                Console.WriteLine("a");
 
                 var p = args.Player;
-                Console.WriteLine("a");
 
                 var player = PlayerManager.getPlayerFromAccount(p.Account.Name);
                 if (player == null)
@@ -216,22 +212,18 @@ namespace RankSystem
                     args.Player.SendErrorMessage("Something went wrong!");
                     return;
                 }
-                Console.WriteLine("a");
 
 
                 args.Player.SendMessage($"You have played for: {player.TotalTime}", Color.IndianRed);
-                Console.WriteLine("a");
 
 
                 var newGroup = player.NextGroupName;
-                Console.WriteLine("a");
 
                 if (player.NextGroupName != "")
                 {
                     args.Player.SendMessage($"Your next rank ({player.NextGroupName}) will unlock in: {player.NextRankTime}", Color.Orange);
                     return;
                 }
-                Console.WriteLine("a");
 
                 args.Player.SendMessage($"You are at the final rank!", Color.LightGreen);
 
