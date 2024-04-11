@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Newtonsoft.Json;
 using TShockAPI;
 
@@ -36,8 +37,6 @@ namespace RankSystem
     {
 		public string StartGroup { get; set; } = "default";
 		public string EndGroup { get; set; } = "endGroup";
-        public bool doesCurrencyAffectRankTime { get; set; } = false;
-        public int currencyAffect { get; set; } = 1;
 
 		public bool useAFKSystem { get; set; } = true;
 
@@ -70,6 +69,75 @@ namespace RankSystem
 			{
 				TShock.Log.ConsoleError(ex.ToString());
 				return new Config();
+			}
+		}
+		
+		public Group GetGroup(string name)
+		{
+			return Groups.Find(x => x.name == name);
+		}
+
+		public Group GetClosestGroup(int time)
+		{
+			return Groups.LastOrDefault(x => x.info.rankCost <= time);
+		}
+		
+		public Group GetNextGroup(string name)
+		{
+			var group = GetGroup(name);
+			if (group is null)
+			{
+				return Groups.ElementAtOrDefault(0);
+			}
+			var index = Groups.IndexOf(group);
+
+			if (index == Groups.Count - 1)
+			{
+				return null;
+			}
+
+			return Groups.ElementAtOrDefault(index + 1);
+		}
+
+		public Group GetNextGroup(int playtime)
+		{
+			var group = GetClosestGroup(playtime);
+			if (group is null)
+			{
+				return Groups.ElementAtOrDefault(0);
+			}
+			
+			var index = Groups.IndexOf(group);
+
+			if (index == -1)
+			{
+				return null;
+			}
+
+			return Groups.ElementAtOrDefault(index + 1);
+		}
+		
+		public string GetTimeTillNextGroup(int playtime)
+		{
+			var group = GetClosestGroup(playtime);
+			Group nextGroup;
+
+			nextGroup = group is null ? Groups.ElementAtOrDefault(0) : GetNextGroup(group.name);
+			
+			// return the difference
+			return TimeSpan.FromSeconds(nextGroup.info.rankCost - playtime).ElapsedString();
+		}
+		
+		public void GiveDrops(RankInfo rankInfo, TSPlayer player)
+		{
+			if (rankInfo.rankUnlocks.Count == 0)
+			{
+				return;
+			}
+
+			foreach (KeyValuePair<int, int> prop in rankInfo.rankUnlocks)
+			{
+				player.GiveItem(prop.Key, prop.Value, 0);
 			}
 		}
 	}

@@ -17,6 +17,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.Xna.Framework;
 using Terraria.ID;
 using System.Timers;
+using Timer = System.Timers.Timer;
 
 namespace RankSystem
 {
@@ -24,12 +25,11 @@ namespace RankSystem
     public class RankSystem : TerrariaPlugin
     {
         private IDbConnection _db;
-        public static Database dbManager;
+        public static Database DB;
         public static Config config;
-        public DateTime LastTimelyRun = DateTime.UtcNow;
         private static Timers _timers;
-        static HttpClient client = new HttpClient();
-        public static List<RPlayer> _players = new List<RPlayer>();
+
+        private Timer _timer = new(5000);
 
         public static bool timerCheck = false;
 
@@ -91,44 +91,25 @@ namespace RankSystem
                     throw new Exception("Invalid storage type.");
             }
 
-            dbManager = new Database(_db);
+            DB = new Database(_db);
             ServerApi.Hooks.GameInitialize.Register(this, OnInitialize);
-            ServerApi.Hooks.ServerLeave.Register(this, OnPlayerLeave);
             PlayerHooks.PlayerPostLogin += OnLogin;
-            ServerApi.Hooks.GameUpdate.Register(this, OnUpdate);
             GeneralHooks.ReloadEvent += Reload;
+
+            _timer.Elapsed += Timers.UpdateTimer;
+            _timer.AutoReset = true;
+            _timer.Enabled = true;
+            _timer.Start();
         }
 
-        private void OnUpdate(EventArgs args)
-        {
-            if (timerCheck == false)
-            {
-                return;
-            }
-
-            if ((DateTime.UtcNow - LastTimelyRun).TotalSeconds >= 5)
-            {
-                LastTimelyRun = DateTime.UtcNow;
-                Timers.UpdateTimer();
-            }
-
-            if ((DateTime.UtcNow - LastTimelyRun).TotalMinutes >= 5)
-            {
-                RankSystem.dbManager.SaveAllPlayers();
-            }
-        }
 
         protected override void Dispose(bool disposing)
         {
             if (disposing)
             {
                 TShockAPI.Hooks.PlayerHooks.PlayerPostLogin -= OnLogin;
-                ServerApi.Hooks.ServerLeave.Deregister(this, OnPlayerLeave);
                 ServerApi.Hooks.GameInitialize.Deregister(this, OnInitialize);
-                ServerApi.Hooks.GameUpdate.Deregister(this, OnUpdate);
                 GeneralHooks.ReloadEvent -= Reload;
-
-                dbManager.SaveAllPlayers();
             }
 
             base.Dispose(disposing);
@@ -150,59 +131,108 @@ namespace RankSystem
             {
                 HelpText = "Displays information about your current and upcoming rank"
             });
-            Commands.ChatCommands.Add(new Command("rs.admin", Delete, "rankdelete")
-            {
-                HelpText = "Deletes a player's rank from the database"
-            });
-            Commands.ChatCommands.Add(new Command("rs.admin", ViewPlayers, "viewplayers")
-            {
-                HelpText = "view list of all 'RPlayers'"
-            });
             Commands.ChatCommands.Add(new Command("rs.user", Favorite, "favorite")
             {
                 HelpText = "Set your favorite rank"
             });
+            Commands.ChatCommands.Add(new Command("rs.admin", Admin, "rankadmin")
+            {
+                HelpText = "RankSystem admin commands"
+            });
         }
 
-        private void ViewPlayers(CommandArgs args)
+        private void Admin(CommandArgs args)
         {
-            foreach (RPlayer p in RankSystem._players)
+            var player = args.Player;
+            var subcmd = args.Parameters.ElementAtOrDefault(0);
+
+            if (subcmd == default)
             {
-                args.Player.SendMessage(p.name, Color.White);
+                player.SendErrorMessage("Invalid syntax! Proper syntax: /rankadmin <reset|modifytime>");
+                return;
+            }
+
+
+            switch (subcmd)
+            {
+                case "reset":
+                {
+                    var playerToReset = args.Parameters.ElementAtOrDefault(1);
+
+                    if (playerToReset == null)
+                    {
+                        player.SendErrorMessage("Invalid syntax! Proper syntax: /rankadmin reset <player>");
+                        return;
+                    }
+                    
+                    var playerInformation = DB.GrabPlayerFromAccountName(playerToReset);
+
+                    if (playerInformation == null)
+                    {
+                        player.SendErrorMessage("That player does not exist! Maybe they have never logged in?");
+                        return;
+                    }
+
+                    try
+                    {
+                        var success = DB.DeletePlayer(playerToReset);
+                        if (success)
+                        {
+                            player.SendSuccessMessage($"You have successfully reset {playerToReset}'s rank!");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        player.SendErrorMessage("Something went wrong! If you are a server admin, please check the logs for more information.");
+                        TShock.Log.ConsoleError($"Something went wrong while trying to reset a player's rank: {ex.ToString()}");
+                    }
+
+                    return;
+                }
+                case "modifytime":
+                {
+                    var playerToModify = args.Parameters.ElementAtOrDefault(1);
+                    var timeToModify = args.Parameters.ElementAtOrDefault(2);
+                    
+                    if (playerToModify == null || timeToModify == null)
+                    {
+                        player.SendErrorMessage("Invalid syntax! Proper syntax: /rankadmin modifytime <player> <time>");
+                        return;
+                    }
+                    
+                    if(int.TryParse(timeToModify, out var time) == false)
+                    {
+                        player.SendErrorMessage($"Invalid syntax! Proper syntax: /rankadmin modifytime {playerToModify} <time>");
+                        return;
+                    }
+                    
+                    var playerInformation = DB.GrabPlayerFromAccountName(playerToModify);
+                    
+                    if (playerInformation == null)
+                    {
+                        player.SendErrorMessage("That player does not exist! Maybe they have never logged in?");
+                        return;
+                    }
+                    
+                    playerInformation.TotalTime = time;
+                    DB.SavePlayer(playerInformation);
+                    player.SendSuccessMessage($"You have successfully modified {playerToModify}'s playtime to {time}!");
+                    return;
+                }
             }
         }
+
 
         private static void Reload(ReloadEventArgs args)
         {
             config = Config.Read();
         }
 
-        private static TShockAPI.Group GetGroupBasedOnPlaytime(TSPlayer player)
-        {
-            // get the player
-            var rPlayer = PlayerManager.getPlayerFromAccount(player.Account.Name);
-
-            if (rPlayer == null)
-            {
-                return null;
-            }
-
-            // get the group that is closest to the player's playtime, we want the highest group that is lower than or equal to  the player's playtime
-            var group = config.Groups.LastOrDefault(x => x.info.rankCost <= rPlayer.totaltime);
-            
-            if (group == null)
-            {
-                return null;
-            }
-            
-            return TShock.Groups.FirstOrDefault(x => x.Name == group.name);
-        }
-
         private static void Favorite(CommandArgs args)
         {
-            var player = PlayerManager.getPlayerFromAccount(args.Player.Account.Name);
+            var playerInformation = args.Player.GetPlaytimeInformation();
 
-            if (player == null)
+            if (playerInformation == null)
             {
                 args.Player.SendErrorMessage("Something went wrong!");
                 return;
@@ -217,11 +247,11 @@ namespace RankSystem
 
             if (string.Equals(favoriteInput, "none", StringComparison.OrdinalIgnoreCase))
             {
-                dbManager.SetFavorite(player.name, "");
+                DB.SetFavorite(args.Player.Account.Name, "");
 
                 // get the user group that they should have based on playtime
-                var tempGroup = GetGroupBasedOnPlaytime(args.Player);
-                
+                var tempGroup = config.GetClosestGroup(playerInformation.TotalTime);
+
                 if (tempGroup == null)
                 {
                     args.Player.SendErrorMessage("Something went wrong!");
@@ -229,8 +259,8 @@ namespace RankSystem
                 }
 
                 // set the user's group
-                TShock.UserAccounts.SetUserGroup(TShock.UserAccounts.GetUserAccountByName(player.accountName),
-                    tempGroup.Name);
+                TShock.UserAccounts.SetUserGroup(TShock.UserAccounts.GetUserAccountByName(args.Player.Account.Name),
+                    tempGroup.name);
 
                 args.Player.SendSuccessMessage("Your favorite rank has been removed!");
                 return;
@@ -249,7 +279,10 @@ namespace RankSystem
                 string.Equals(x.name, favoriteInput, StringComparison.OrdinalIgnoreCase));
 
             // check if the group is higher than the player's current group
-            if (config.Groups.IndexOf(groupFromConfig) > player.GroupIndex)
+            var usersGroup = config.GetClosestGroup(playerInformation.TotalTime);
+            var usersGroupIndex = config.Groups.IndexOf(usersGroup);
+
+            if (config.Groups.IndexOf(groupFromConfig) > usersGroupIndex)
             {
                 args.Player.SendErrorMessage("You can't favorite a rank that is higher than your current rank!");
                 return;
@@ -266,10 +299,10 @@ namespace RankSystem
             }
 
             // set the player's favorite group
-            dbManager.SetFavorite(player.name, group.Name);
+            DB.SetFavorite(args.Player.Account.Name, group.Name);
 
             // set the user's group
-            TShock.UserAccounts.SetUserGroup(TShock.UserAccounts.GetUserAccountByName(player.accountName), group.Name);
+            TShock.UserAccounts.SetUserGroup(args.Player.Account, group.Name);
             args.Player.SendSuccessMessage($"Your favorite rank is now: {group.Name}");
             args.Player.SendInfoMessage("Use /favorite none to remove your favorite rank");
         }
@@ -279,7 +312,7 @@ namespace RankSystem
             if (args.Parameters.Count > 0)
             {
                 string str = string.Join("", args.Parameters);
-                var player = dbManager.GrabOfflinePlayer(str);
+                var player = DB.GrabPlayerFromAccountName(str);
 
                 if (player == null)
                 {
@@ -287,17 +320,20 @@ namespace RankSystem
                     return;
                 }
 
-                args.Player.SendMessage($"{player.accountName} has played for: {player.TotalTime}", Color.IndianRed);
+                args.Player.SendMessage(
+                    $"{player.AccountName} has played for: {TimeSpan.FromSeconds(player.TotalTime).ElapsedString()}",
+                    Color.IndianRed);
 
-                if (player.NextGroupName != "")
+                var nextGroup = config.GetNextGroup(player.TotalTime);
+                if (nextGroup != null)
                 {
                     args.Player.SendMessage(
-                        $"{player.accountName}'s next rank ({player.NextGroupName}) will unlock in: {player.NextRankTime}",
+                        $"{player.AccountName}'s next rank ({nextGroup.name}) will unlock in: {config.GetTimeTillNextGroup(player.TotalTime)}",
                         Color.Orange);
                     return;
                 }
 
-                args.Player.SendMessage($"{player.accountName} is at the final rank!", Color.LightGreen);
+                args.Player.SendMessage($"{player.AccountName} is at the final rank!", Color.LightGreen);
 
                 return;
             }
@@ -310,30 +346,32 @@ namespace RankSystem
 
                 var p = args.Player;
 
-                var player = PlayerManager.getPlayerFromAccount(p.Account.Name);
+                var player = p.GetPlaytimeInformation();
                 if (player == null)
                 {
-                    args.Player.SendErrorMessage("Something went wrong!");
+                    args.Player.SendErrorMessage("Could not fetch your playtime information!");
                     return;
                 }
 
-                if (!dbManager.HasFavorite(p.Account.Name))
+                if (!DB.HasFavorite(p.Account.Name))
                 {
                     if (player.ShouldRankup())
                     {
-                        Timers.rankUpUser(player);
+                        Timers.RankupUser(p);
                     }
                 }
 
-                args.Player.SendMessage($"You have played for: {player.TotalTime}", Color.IndianRed);
+                args.Player.SendMessage(
+                    $"You have played for: {TimeSpan.FromSeconds(player.TotalTime).ElapsedString()}", Color.IndianRed);
 
 
-                var newGroup = player.NextGroupName;
+                var newGroup = config.GetNextGroup(player.TotalTime);
 
-                if (player.NextGroupName != "")
+                if (newGroup != null)
                 {
                     args.Player.SendMessage(
-                        $"Your next rank ({player.NextGroupName}) will unlock in: {player.NextRankTime}", Color.Orange);
+                        $"Your next rank ({newGroup.name}) will unlock in: {config.GetTimeTillNextGroup(player.TotalTime)}",
+                        Color.Orange);
                     return;
                 }
 
@@ -347,98 +385,28 @@ namespace RankSystem
         {
             var p = args.Player;
 
-            if (dbManager.CheckRankExist(p.Account.Name) == true)
+            var playtimeInformation = DB.GrabPlayer(p);
+
+            if (playtimeInformation is null)
             {
-                if (p == null)
-                {
-                    return;
-                }
-
-                var e = dbManager.GrabPlayer(p.Account.Name, p.Name);
-                _players.Add(e);
+                return;
             }
-            else if (dbManager.CheckRankExist(p.Account.Name) == false)
-            {
-                if (p == null)
-                {
-                    return;
-                }
-
-                RPlayer n = new RPlayer(p.Account.Name);
-                _players.Add(n);
-                dbManager.InsertPlayer(n);
-            }
-            else
-            {
-                Console.WriteLine($"ERROR: {p.Name}'s Playtime could not be loaded!");
-            }
-
-
-            RPlayer player = PlayerManager.getPlayerFromAccount(p.Account.Name);
-
 
             if (p.Group.Name == config.StartGroup) //starting rank/new player
                 TShock.UserAccounts.SetUserGroup(TShock.UserAccounts.GetUserAccountByName(p.Account.Name),
                     config.Groups[0].name); //AutoStarts the player to the config's first rank.
 
-            var favorite = dbManager.GetFavorite(player.accountName);
+            var favorite = playtimeInformation.Favorite;
             if (!string.IsNullOrWhiteSpace(favorite))
             {
                 // get the group
                 var group = TShock.Groups.FirstOrDefault(x => x.Name == favorite);
                 if (group != null)
                 {
-                    TShock.UserAccounts.SetUserGroup(TShock.UserAccounts.GetUserAccountByName(player.accountName),
+                    TShock.UserAccounts.SetUserGroup(TShock.UserAccounts.GetUserAccountByName(p.Account.Name),
                         group.Name);
                 }
             }
-
-            if (timerCheck == false && _players.Count > 0)
-            {
-                timerCheck = true;
-            }
-        }
-
-        private static void OnPlayerLeave(LeaveEventArgs args)
-        {
-            TSPlayer tsPlayer = TShock.Players.ElementAtOrDefault(args.Who);
-
-            if (tsPlayer is null)
-            {
-                return;
-            }
-
-            if (tsPlayer.IsLoggedIn == false)
-            {
-                return;
-            }
-
-            RPlayer player = PlayerManager.getPlayerFromAccount(tsPlayer.Account.Name);
-            if (player == null)
-                return;
-
-            dbManager.SavePlayer(player);
-            _players.Remove(_players.First(x => x.accountName == tsPlayer.Account.Name));
-
-            if (timerCheck == true && TShock.Utils.GetActivePlayerCount() <= 0)
-            {
-                timerCheck = false;
-            }
-        }
-
-
-        private static void Delete(CommandArgs args)
-        {
-            if (args.Parameters.Count > 0)
-            {
-                var name = string.Join(" ", args.Parameters);
-                if (dbManager.DeletePlayer(name))
-                    args.Player.SendSuccessMessage("[RankSystem] Deleted player: " + name);
-                else
-                    args.Player.SendErrorMessage("[RankSystem] Failed to delete player named: " + name);
-            }
-            else
-                args.Player.SendErrorMessage("Invalid syntax! Proper syntax: /rankdelete <player>");
         }
     }
 }

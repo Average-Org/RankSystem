@@ -1,136 +1,76 @@
 ﻿using System;
 using System.Linq;
 using TShockAPI;
-using System.Collections.Generic;
+using System.Timers;
+using Microsoft.Xna.Framework;
 
 namespace RankSystem
 {
     class Timers
     {
-        public static List<RPlayer> toRemove = new List<RPlayer>();
+        private static string RankupMessage =>
+            "[c/00ffff:Y][c/00fff7:o][c/00fff0:u] [c/00ffe2:h][c/00ffdb:a][c/00ffd4:v][c/00ffcd:e] [c/00ffbf:r][c/00ffb8:a][c/00ffb1:n][c/00ffaa:k][c/00ffa3:e][c/00ff9c:d] [c/00ff8e:u][c/00ff87:p][c/00ff80:!]";
 
-        internal static void rankUpUser(RPlayer player)
+        internal static void RankupUser(TSPlayer player)
         {
-            int reqPoints = 0;
-            if (player.NextRankInfo != null)
-            {
-                reqPoints = player.NextRankInfo.rankCost;
-            }
-            else
-            {
-                return;
-            }
+            var playtimeInformation = player.GetPlaytimeInformation();
+            
+            var closestGroup = RankSystem.config.GetClosestGroup(playtimeInformation.TotalTime);
 
-            if (RankSystem.config.doesCurrencyAffectRankTime == true)
+            // user is not in the right group, should be ranked up
+            if (closestGroup.name != player.Group.Name)
             {
-                reqPoints = player.NextRankInfo.rankCost - ((RankSystem.config.currencyAffect / 100) *
-                                                            (int)Math.Round(SimpleEcon.PlayerManager
-                                                                .GetPlayer(player.accountName).balance));
-            }
-
-            if (player.totaltime > reqPoints)
-            {
-                TShock.UserAccounts.SetUserGroup(TShock.UserAccounts.GetUserAccountByName(player.accountName),
-                    player.NextGroupName);
-
-                if (player.RankInfo.rankUnlocks != null)
+                try
                 {
-                    player.giveDrops(player.tsPlayer);
+                    // rank them up to it
+                    TShock.UserAccounts.SetUserGroup(TShock.UserAccounts.GetUserAccountByName(player.Account.Name),
+                        closestGroup.name);
+                    
+                    if (closestGroup.info.rankUnlocks != null)
+                    {
+                        RankSystem.config.GiveDrops(closestGroup.info, player);
+                    }
+
+                    player.SendMessage(RankupMessage, Color.White);
+                }
+                catch (Exception ex)
+                {
+                    TShock.Log.ConsoleError($"Rank System Error: {ex}");
                 }
 
-
-                player.GroupIndex++;
-
-                player.Group = player.NextGroupName;
-
-                player.tsPlayer.SendMessage(
-                    "[c/00ffff:Y][c/00fff7:o][c/00fff0:u] [c/00ffe2:h][c/00ffdb:a][c/00ffd4:v][c/00ffcd:e] [c/00ffbf:r][c/00ffb8:a][c/00ffb1:n][c/00ffaa:k][c/00ffa3:e][c/00ff9c:d] [c/00ff8e:u][c/00ff87:p][c/00ff80:!]",
-                    Microsoft.Xna.Framework.Color.White);
-            }
-            else
-            {
                 return;
             }
         }
 
-        public static void UpdateTimer()
+        public static void UpdateTimer(object sender, ElapsedEventArgs e)
         {
-            if (RankSystem._players.Any() is false)
+            var loggedInPlayers = TShock.Players.Where(p => p is { Active: true, IsLoggedIn: true }).ToList();
+            
+            foreach (var player in loggedInPlayers)
             {
-                return;
-            }
-
-            foreach (var player in RankSystem._players)
-            {
-                if (RankSystem.config.useAFKSystem)
-                {
-                    if (player.lastPos == player.tsPlayer.LastNetPosition)
-                    {
-                        player.afk++;
-                    }
-                    else if (player.isAFK == true && player.lastPos != player.tsPlayer.LastNetPosition)
-                    {
-                        player.afk = 0;
-                        player.isAFK = false;
-                        TSPlayer.All.SendInfoMessage($"{player.name} is no longer AFK!");
-                    }
-
-                    player.lastPos = player.tsPlayer.LastNetPosition;
-
-                    if (player.afk >= 25 && player.isAFK == false)
-                    {
-                        player.isAFK = true;
-                        TSPlayer.All.SendInfoMessage($"{player.name} is now AFK!");
-                        continue;
-                    }
-
-                    if (player.isAFK == true)
-                    {
-                        continue;
-                    }
-                }
-
-
-                player.totaltime += 5;
-                player.afk = 0;
-                player.isAFK = false;
-
-
-                if (!player.ConfigContainsGroup)
+                var playtimeInformation = player.GetPlaytimeInformation();
+                
+                if(playtimeInformation is null)
                 {
                     continue;
                 }
-
-                if (player.NextGroupName == null)
+                
+                if (RankSystem.config.useAFKSystem && AfkSystem.HandleAfk(player))
                 {
                     continue;
                 }
+                
+                playtimeInformation.TotalTime += 5;
+                RankSystem.DB.SavePlayer(playtimeInformation);
 
-                if (player.tsPlayer.Group.Name == RankSystem.config.EndGroup)
+                if (RankSystem.DB.HasFavorite(player.Account.Name))
                 {
                     continue;
                 }
-
-                if (!string.IsNullOrEmpty(player.NextGroupName) && !RankSystem.dbManager.HasFavorite(player.name))
-                {
-                    rankUpUser(player);
-                }
-                else
-                {
-                    continue;
-                }
-            }
-
-            RemoveGarbage();
-            return;
-        }
-
-        public static void RemoveGarbage()
-        {
-            foreach (RPlayer player in toRemove)
-            {
-                RankSystem._players.RemoveAll(x => x.name == player.name);
+                
+                RankupUser(player);
             }
         }
+        
     }
 }

@@ -14,9 +14,4 @@
     <PackageReference Include="TSAPI" Version="5.1.2" />
     <PackageReference Include="TShock" Version="5.1.2" />
   </ItemGroup>
-  <ItemGroup>
-    <Reference Include="SimpleEcon">
-      <HintPath>..\..\SimpleEcon\SimpleEcon\bin\Debug\net6.0\SimpleEcon.dll</HintPath>
-    </Reference>
-  </ItemGroup>
 </Project>
