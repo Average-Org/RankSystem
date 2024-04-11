@@ -1,18 +1,7 @@
-﻿using IL.Terraria;
-using NuGet.Protocol;
-using System;
+﻿using System;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Timers;
 using TShockAPI;
-using TShockAPI.CLI;
-using SimpleEcon;
-using System.IO;
-using System.Reflection;
 using System.Collections.Generic;
-using IL.Terraria.ID;
-using System.Reflection.Metadata.Ecma335;
 
 namespace RankSystem
 {
@@ -20,12 +9,12 @@ namespace RankSystem
     {
         public static List<RPlayer> toRemove = new List<RPlayer>();
 
-        private static void rankUpUser(RPlayer player)
+        internal static void rankUpUser(RPlayer player)
         {
             int reqPoints = 0;
-            if(player.NextRankInfo!= null) {
+            if (player.NextRankInfo != null)
+            {
                 reqPoints = player.NextRankInfo.rankCost;
-
             }
             else
             {
@@ -34,14 +23,15 @@ namespace RankSystem
 
             if (RankSystem.config.doesCurrencyAffectRankTime == true)
             {
-              
-                    reqPoints = player.NextRankInfo.rankCost - ((RankSystem.config.currencyAffect / 100) * (int)Math.Round(SimpleEcon.PlayerManager.GetPlayer(player.accountName).balance));
-                
+                reqPoints = player.NextRankInfo.rankCost - ((RankSystem.config.currencyAffect / 100) *
+                                                            (int)Math.Round(SimpleEcon.PlayerManager
+                                                                .GetPlayer(player.accountName).balance));
             }
 
             if (player.totaltime > reqPoints)
             {
-                TShock.UserAccounts.SetUserGroup(TShock.UserAccounts.GetUserAccountByName(player.accountName), player.NextGroupName);
+                TShock.UserAccounts.SetUserGroup(TShock.UserAccounts.GetUserAccountByName(player.accountName),
+                    player.NextGroupName);
 
                 if (player.RankInfo.rankUnlocks != null)
                 {
@@ -49,12 +39,13 @@ namespace RankSystem
                 }
 
 
-                player.GroupIndex++; 
+                player.GroupIndex++;
 
-                player.Group = player.NextGroupName; 
+                player.Group = player.NextGroupName;
 
-                player.tsPlayer.SendMessage("[c/00ffff:Y][c/00fff7:o][c/00fff0:u] [c/00ffe2:h][c/00ffdb:a][c/00ffd4:v][c/00ffcd:e] [c/00ffbf:r][c/00ffb8:a][c/00ffb1:n][c/00ffaa:k][c/00ffa3:e][c/00ff9c:d] [c/00ff8e:u][c/00ff87:p][c/00ff80:!]", Microsoft.Xna.Framework.Color.White);
-
+                player.tsPlayer.SendMessage(
+                    "[c/00ffff:Y][c/00fff7:o][c/00fff0:u] [c/00ffe2:h][c/00ffdb:a][c/00ffd4:v][c/00ffcd:e] [c/00ffbf:r][c/00ffb8:a][c/00ffb1:n][c/00ffaa:k][c/00ffa3:e][c/00ff9c:d] [c/00ff8e:u][c/00ff87:p][c/00ff80:!]",
+                    Microsoft.Xna.Framework.Color.White);
             }
             else
             {
@@ -64,22 +55,15 @@ namespace RankSystem
 
         public static void UpdateTimer()
         {
-            if (RankSystem._players.Count == 0)
+            if (RankSystem._players.Any() is false)
             {
                 return;
             }
 
-            if (RankSystem._players.Any() == false)
+            foreach (var player in RankSystem._players)
             {
-                return;
-            }
-
-
-            foreach (RPlayer player in RankSystem._players)
-            {
-                if(RankSystem.config.useAFKSystem == true)
+                if (RankSystem.config.useAFKSystem)
                 {
-
                     if (player.lastPos == player.tsPlayer.LastNetPosition)
                     {
                         player.afk++;
@@ -92,17 +76,18 @@ namespace RankSystem
                     }
 
                     player.lastPos = player.tsPlayer.LastNetPosition;
+
                     if (player.afk >= 25 && player.isAFK == false)
                     {
                         player.isAFK = true;
                         TSPlayer.All.SendInfoMessage($"{player.name} is now AFK!");
                         continue;
                     }
+
                     if (player.isAFK == true)
                     {
                         continue;
                     }
-
                 }
 
 
@@ -126,7 +111,7 @@ namespace RankSystem
                     continue;
                 }
 
-                if (string.IsNullOrEmpty(player.NextGroupName) != true)
+                if (!string.IsNullOrEmpty(player.NextGroupName) && !RankSystem.dbManager.HasFavorite(player.name))
                 {
                     rankUpUser(player);
                 }
@@ -134,24 +119,18 @@ namespace RankSystem
                 {
                     continue;
                 }
-
-
-
-
-
             }
+
             RemoveGarbage();
             return;
-
         }
 
         public static void RemoveGarbage()
         {
-            foreach(RPlayer player in toRemove)
+            foreach (RPlayer player in toRemove)
             {
-                RankSystem._players.RemoveAll(x=>x.name==player.name);
+                RankSystem._players.RemoveAll(x => x.name == player.name);
             }
         }
-
     }
 }

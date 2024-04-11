@@ -22,7 +22,8 @@ namespace RankSystem
                 new SqlColumn("ID", MySqlDbType.Int32) { Primary = true, AutoIncrement = true },
                 new SqlColumn("Name", MySqlDbType.VarChar, 50) { Unique = true },
                 new SqlColumn("Time", MySqlDbType.Int32),
-                new SqlColumn("LastLogin", MySqlDbType.DateTime)
+                new SqlColumn("LastLogin", MySqlDbType.DateTime),
+                new SqlColumn("Favorite", MySqlDbType.Text)
                 );
             sqlCreator.EnsureTableStructure(table);
         }
@@ -36,6 +37,35 @@ namespace RankSystem
         public bool DeletePlayer(string player)
         {
             return _db.Query("DELETE FROM RankSystem WHERE Name = @0", player) != 0;
+        }
+
+        public bool SetFavorite(string player, string favorite)
+        {
+            return _db.Query("UPDATE RankSystem SET Favorite = @0 WHERE Name = @1", favorite, player) != 0;
+        }
+        
+        public string GetFavorite(string player)
+        {
+            using (var reader = _db.QueryReader("SELECT * FROM RankSystem WHERE Name = @0", player))
+            {
+                while (reader.Read())
+                {
+                    return reader.Get<string>("Favorite");
+                }
+            }
+            return null;
+        }
+        
+        public bool HasFavorite(string player)
+        {
+            using (var reader = _db.QueryReader("SELECT * FROM RankSystem WHERE Name = @0", player))
+            {
+                while (reader.Read())
+                {
+                    return reader.Get<string>("Favorite") != null;
+                }
+            }
+            return false;
         }
 
         public bool SavePlayer(RPlayer player)

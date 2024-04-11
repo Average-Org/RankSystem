@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using TShockAPI;
 using static SimpleEcon.PlayerManager;
 
+// TODO: FIX THIS FUCKING MESS
 namespace RankSystem
 {
     public static class PlayerManager
@@ -18,10 +19,12 @@ namespace RankSystem
             {
                 return null;
             }
+
             if (RankSystem._players.Any(p => p.name == player.Name) == false)
             {
                 return null;
             }
+
             return RankSystem._players.Find(p => p.name == player.Name);
         }
 
@@ -31,16 +34,19 @@ namespace RankSystem
             {
                 return null;
             }
-            if(RankSystem._players.Any(p => p.name == name) == false)
+
+            if (RankSystem._players.Any(p => p.name == name) == false)
             {
                 return null;
             }
+
             return RankSystem._players.Find(p => p.name == name);
         }
 
         public static RPlayer getPlayerFromAccount(string name)
         {
-            if (!RankSystem._players.Any(x => x.name == name)){
+            if (!RankSystem._players.Any(x => x.name == name))
+            {
                 return null;
             }
 
@@ -53,13 +59,14 @@ namespace RankSystem
             {
                 return null;
             }
+
             if (RankSystem._players.Any(p => p.name == TSPlayer.FindByNameOrID("" + id)[0].Name))
             {
                 return null;
             }
+
             return RankSystem._players.Find(p => p.name == TSPlayer.FindByNameOrID("" + id)[0].Name);
         }
-
     }
 
     public class RPlayer
@@ -74,26 +81,46 @@ namespace RankSystem
 
         public int afk { get; set; }
 
-        public string accountName { get { if (offline) { return name; } return tsPlayer.Account.Name; } set { } }
-        public DateTime firstlogin { get; set; }
-        public DateTime lastlogin { get; set; }
-        public string Group { get { if (offline) { return TShock.UserAccounts.GetUserAccountByName(accountName).Group; } return tsPlayer.Group.Name; } set { }
-        }
-        public int GroupIndex
+        public string accountName
         {
             get
             {
-                return RankSystem.config.Groups.FindIndex(x => x.name == Group);
+                if (offline)
+                {
+                    return name;
+                }
+
+                return tsPlayer.Account.Name;
             }
+        }
+
+        public DateTime firstlogin { get; set; }
+        public DateTime lastlogin { get; set; }
+
+        public string Group
+        {
+            get
+            {
+                if (offline)
+                {
+                    return TShock.UserAccounts.GetUserAccountByName(accountName).Group;
+                }
+
+                return tsPlayer.Group.Name;
+            }
+            set { }
+        }
+
+        public int GroupIndex
+        {
+            get { return RankSystem.config.Groups.FindIndex(x => x.name == Group); }
             set { }
         }
 
         public bool ConfigContainsGroup
         {
-
             get
             {
-
                 if (RankSystem.config.StartGroup == Group)
                 {
                     return true;
@@ -113,8 +140,7 @@ namespace RankSystem
         {
             get
             {
-
-                if(Group == RankSystem.config.StartGroup)
+                if (Group == RankSystem.config.StartGroup)
                 {
                     return RankSystem.config.Groups[0].info;
                 }
@@ -127,6 +153,7 @@ namespace RankSystem
                 return RankSystem.config.Groups[GroupIndex].info;
             }
         }
+
         public int totaltime { get; set; }
 
         public RPlayer(string name)
@@ -146,15 +173,15 @@ namespace RankSystem
             this.firstlogin = DateTime.Parse(this.tsPlayer.Account.Registered);
             this.lastlogin = DateTime.UtcNow;
         }
+
         public RPlayer(string name, int time, bool offline)
         {
             this.name = name;
             this.totaltime = time;
             this.lastlogin = DateTime.UtcNow;
-            if(offline == true)
+            if (offline == true)
             {
                 this.offline = offline;
-
             }
             else
             {
@@ -166,7 +193,7 @@ namespace RankSystem
 
         public void giveDrops(TSPlayer player)
         {
-            if(RankInfo.rankUnlocks.Count == 0)
+            if (RankInfo.rankUnlocks.Count == 0)
             {
                 return;
             }
@@ -175,8 +202,35 @@ namespace RankSystem
             {
                 player.GiveItem(prop.Key, prop.Value, 0);
             }
-
         }
+
+        public bool ShouldRankup()
+        {
+            if (!ConfigContainsGroup)
+                return false;
+
+            if (string.IsNullOrEmpty(NextGroupName))
+                return false;
+
+            var reqPoints = NextRankInfo.rankCost;
+
+            if (RankSystem.config.doesCurrencyAffectRankTime == true)
+            {
+                reqPoints = NextRankInfo.rankCost - ((RankSystem.config.currencyAffect / 100) *
+                                                     (int)Math.Round(SimpleEcon.PlayerManager
+                                                         .GetPlayerFromAccount(accountName).balance));
+            }
+
+            var ts = new TimeSpan(0, 0, 0, reqPoints - totaltime);
+
+            if (ts.TotalSeconds <= 0)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         public string TotalRegisteredTime
         {
             get
@@ -199,10 +253,11 @@ namespace RankSystem
         {
             get
             {
-                if(totaltime == 0)
+                if (totaltime == 0)
                 {
                     return "0 seconds";
                 }
+
                 var ts = new TimeSpan(0, 0, 0, totaltime);
                 return ts.ElapsedString();
             }
@@ -222,7 +277,7 @@ namespace RankSystem
         {
             get
             {
-                if (RankSystem.config.Groups.Count-1 == GroupIndex)
+                if (RankSystem.config.Groups.Count - 1 == GroupIndex)
                     return "";
 
                 if (!ConfigContainsGroup)
@@ -241,7 +296,7 @@ namespace RankSystem
                     return null;
                 }
 
-                if (RankSystem.config.Groups.Count-1 == GroupIndex)
+                if (RankSystem.config.Groups.Count - 1 == GroupIndex)
                 {
                     return null;
                 }
@@ -264,14 +319,15 @@ namespace RankSystem
 
                 if (RankSystem.config.doesCurrencyAffectRankTime == true)
                 {
-             
-                        reqPoints = NextRankInfo.rankCost - ((RankSystem.config.currencyAffect / 100) * (int)Math.Round(SimpleEcon.PlayerManager.GetPlayerFromAccount(accountName).balance));
-                    
+                    reqPoints = NextRankInfo.rankCost - ((RankSystem.config.currencyAffect / 100) *
+                                                         (int)Math.Round(SimpleEcon.PlayerManager
+                                                             .GetPlayerFromAccount(accountName).balance));
                 }
 
                 var ts = new TimeSpan(0, 0, 0, reqPoints - totaltime);
-
+                
                 return ts.ElapsedString();
+                
             }
         }
 
@@ -288,7 +344,5 @@ namespace RankSystem
         }
 
         private static readonly Regex CleanCommandRegex = new Regex(@"^\/?(\w*\w)");
-
-
     }
 }
