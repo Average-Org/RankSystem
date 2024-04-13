@@ -12,6 +12,7 @@ using MySql.Data.MySqlClient;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using Microsoft.Xna.Framework;
@@ -127,18 +128,163 @@ namespace RankSystem
                 return;
             }
 
-            Commands.ChatCommands.Add(new Command("rs.user", Check, "check", "rank", "rankup")
+            Commands.ChatCommands.Add(new Command("rs.user", Check, "check", "rank", "rankup", "playtime")
             {
                 HelpText = "Displays information about your current and upcoming rank"
             });
-            Commands.ChatCommands.Add(new Command("rs.user", Favorite, "favorite")
+            Commands.ChatCommands.Add(new Command("rs.user", Favorite, "favorite", "rankfav")
             {
                 HelpText = "Set your favorite rank"
             });
-            Commands.ChatCommands.Add(new Command("rs.admin", Admin, "rankadmin")
+            Commands.ChatCommands.Add(new Command("rs.admin", Admin, "rankadmin", "ra")
             {
                 HelpText = "RankSystem admin commands"
             });
+            Commands.ChatCommands.Add(new Command("rs.user", Ranks, "ranks", "ranklist")
+            {
+                HelpText = "Displays a list of available ranks"
+            });
+            Commands.ChatCommands.Add(new Command("rs.user", Leaderboard, "top", "topplaytime", "leaderboard")
+            {
+                HelpText = "Displays the top 10 players by playtime"
+            });
+        }
+
+        private void Leaderboard(CommandArgs args)
+        {
+            var player = args.Player;
+
+            var topPlayers = DB.GetTopPlayers(10);
+
+            if (topPlayers.Count == 0)
+            {
+                player.SendErrorMessage("No players found!");
+                return;
+            }
+
+            StringBuilder sb = new();
+            sb.AppendLine("\u2b50 Top 10 Players by Playtime \u2b50");
+
+            foreach (var kvp in topPlayers)
+            {
+                var usersGroup = TShock.Groups.GetGroupByName(kvp.Key.Group);
+                string prefix = string.Empty;
+
+                if (usersGroup != null)
+                {
+                    prefix = FormatPrefixFromRank(usersGroup);
+                }
+
+                var placement = topPlayers.ToList().IndexOf(kvp) + 1;
+
+                // placement color, gold for top 3, silver for 4-6, bronze for 7-10
+                Color placementColor = Color.Gold;
+
+                if (placement > 3 && placement <= 6)
+                {
+                    placementColor = Color.Silver;
+                }
+                else if (placement > 6)
+                {
+                    placementColor = Color.Orange;
+                }
+
+                sb.AppendLine(
+                    $"     [c/{placementColor.Hex3()}:{placement}.] {prefix} [c/{placementColor.Hex3()}:{kvp.Key.Name} with ][c/{Color.Silver.Hex3()}:{TimeSpan.FromSeconds(kvp.Value.TotalTime).ElapsedString()}]");
+            }
+
+            player.SendMessage(sb.ToString(), Color.Gold);
+        }
+
+
+        private void Ranks(CommandArgs args)
+        {
+            var player = args.Player;
+
+            if (config.Groups.Count == 0)
+            {
+                player.SendErrorMessage("No ranks have been set up!");
+                return;
+            }
+
+            StringBuilder sb = new();
+            int totalWidth = "─────────────────────".Length;
+            string ranksText = @"✴ Available Ranks ✴";
+
+            if (args.Player.RealPlayer)
+            {
+                // center the text and make it look pretty for non console users
+                sb.AppendLine($"       {ranksText}");
+            }
+            else
+            {
+                sb.AppendLine(ranksText);
+            }
+
+            sb.AppendLine("─────────────────────");
+
+            foreach (var group in config.Groups)
+            {
+                var tshockGroup = TShock.Groups.GetGroupByName(group.name);
+
+                if (tshockGroup == null)
+                {
+                    TShock.Log.ConsoleError(
+                        $"A rank was discovered in the config that does not exist in TShock: {group.name}. This may cause issues!");
+                    continue;
+                }
+
+                string prefix = FormatPrefixFromRank(tshockGroup);
+
+                sb.AppendLine(
+                    $" {prefix} [c/{Color.LightGreen.Hex3()}:───] [c/{Color.Silver.Hex3()}:{TimeSpan.FromSeconds(group.info.rankCost).ElapsedString()}]");
+            }
+
+            player.SendMessage(sb.ToString(), Color.Gold);
+        }
+
+        private string FormatPrefixFromRank(TShockAPI.Group tshockGroup)
+        {
+            string prefix = string.IsNullOrWhiteSpace(tshockGroup.Prefix) ? tshockGroup.Name : tshockGroup.Prefix;
+            ;
+            Color chatColor = new Color(tshockGroup.R, tshockGroup.G, tshockGroup.B);
+
+            bool containedSquareBrackets = false;
+
+            if (prefix.Contains("[c/") is false)
+            {
+                if (prefix.Contains("[") && prefix.Contains("]"))
+                {
+                    prefix = prefix.Replace("[", "").Replace("]", "");
+
+                    // also remove trailing spaces
+                    prefix = prefix.Trim();
+                    containedSquareBrackets = true;
+                }
+
+                prefix = $"[c/{chatColor.Hex3()}:{prefix}]";
+                if (containedSquareBrackets)
+                {
+                    prefix = $"[c/{chatColor.Hex3()}:[]{prefix}[c/{chatColor.Hex3()}:]] ";
+                }
+            }
+
+            return prefix;
+        }
+
+        private void DisplayAdminHelp(CommandArgs args)
+        {
+            var player = args.Player;
+
+            StringBuilder sb = new();
+            sb.AppendLine($"[c/{Color.LightGreen.Hex3()}:RankSystem Admin Commands]");
+            sb.AppendLine("/rankadmin reset <player> - Reset a player's rank");
+            sb.AppendLine("/rankadmin modifytime <player> <time> - Modify a player's playtime");
+            sb.AppendLine("/rankadmin addrank <rankName> <rankCost> <nextGroup/none> - Add a rank to the config");
+            sb.AppendLine("/rankadmin modifyrank <rank> <property> <value> - Modify a rank's config values");
+            sb.AppendLine("/rankadmin autosortranks - Sort the ranks by rank cost");
+            
+            player.SendMessage(sb.ToString(), Color.Gold);
         }
 
         private void Admin(CommandArgs args)
@@ -148,13 +294,14 @@ namespace RankSystem
 
             if (subcmd == default)
             {
-                player.SendErrorMessage("Invalid syntax! Proper syntax: /rankadmin <reset|modifytime>");
+                DisplayAdminHelp(args);
                 return;
             }
 
 
             switch (subcmd)
             {
+                case "r":
                 case "reset":
                 {
                     var playerToReset = args.Parameters.ElementAtOrDefault(1);
@@ -164,7 +311,7 @@ namespace RankSystem
                         player.SendErrorMessage("Invalid syntax! Proper syntax: /rankadmin reset <player>");
                         return;
                     }
-                    
+
                     var playerInformation = DB.GrabPlayerFromAccountName(playerToReset);
 
                     if (playerInformation == null)
@@ -183,40 +330,227 @@ namespace RankSystem
                     }
                     catch (Exception ex)
                     {
-                        player.SendErrorMessage("Something went wrong! If you are a server admin, please check the logs for more information.");
-                        TShock.Log.ConsoleError($"Something went wrong while trying to reset a player's rank: {ex.ToString()}");
+                        player.SendErrorMessage(
+                            "Something went wrong! If you are a server admin, please check the logs for more information.");
+                        TShock.Log.ConsoleError(
+                            $"Something went wrong while trying to reset a player's rank: {ex.ToString()}");
                     }
 
                     return;
                 }
+                case "autosortranks":
+                {
+                    try
+                    {
+                        // sort by rank cost ascending
+                        var groups = config.Groups.OrderBy(x => x.info.rankCost).ToList();
+
+                        config.Groups = groups;
+                        config.Write();
+                    }
+                    catch (Exception)
+                    {
+                        player.SendErrorMessage("Something went wrong! Please check the logs for more information.");
+                        return;
+                    }
+
+                    player.SendSuccessMessage("You have successfully sorted the ranks by rank cost!");
+                    break;
+                }
+                case "mt":
                 case "modifytime":
                 {
                     var playerToModify = args.Parameters.ElementAtOrDefault(1);
                     var timeToModify = args.Parameters.ElementAtOrDefault(2);
-                    
+
                     if (playerToModify == null || timeToModify == null)
                     {
                         player.SendErrorMessage("Invalid syntax! Proper syntax: /rankadmin modifytime <player> <time>");
                         return;
                     }
-                    
-                    if(int.TryParse(timeToModify, out var time) == false)
+
+                    if (int.TryParse(timeToModify, out var time) == false)
                     {
-                        player.SendErrorMessage($"Invalid syntax! Proper syntax: /rankadmin modifytime {playerToModify} <time>");
+                        player.SendErrorMessage(
+                            $"Invalid syntax! Proper syntax: /rankadmin modifytime {playerToModify} <time>");
                         return;
                     }
-                    
+
                     var playerInformation = DB.GrabPlayerFromAccountName(playerToModify);
-                    
+
                     if (playerInformation == null)
                     {
                         player.SendErrorMessage("That player does not exist! Maybe they have never logged in?");
                         return;
                     }
-                    
+
                     playerInformation.TotalTime = time;
                     DB.SavePlayer(playerInformation);
                     player.SendSuccessMessage($"You have successfully modified {playerToModify}'s playtime to {time}!");
+                    return;
+                }
+                case "ar":
+                case "addrank":
+                {
+                    var rankName = args.Parameters.ElementAtOrDefault(1);
+                    var rankCost = args.Parameters.ElementAtOrDefault(2);
+                    var nextGroup = args.Parameters.ElementAtOrDefault(3);
+
+                    if (rankName == null || rankCost == null || nextGroup == null)
+                    {
+                        player.SendErrorMessage(
+                            "Invalid syntax! Proper syntax: /rankadmin addrank <rankName> <rankCost> <nextGroup/none>");
+                        return;
+                    }
+
+                    // check if rank exists in tshock
+                    if (TShock.Groups.GetGroupByName(rankName) == null)
+                    {
+                        player.SendErrorMessage("That rank does not exist in TShock!");
+                        return;
+                    }
+
+                    if (int.TryParse(rankCost, out var cost) == false)
+                    {
+                        player.SendErrorMessage(
+                            $"You did not enter a valid integer value for the rank cost! Proper syntax: /rankadmin addrank {rankName} <rankCost> <nextGroup/none>");
+                        return;
+                    }
+
+                    // check if next group exists in tshock
+                    if (TShock.Groups.GetGroupByName(nextGroup) == null && nextGroup != "none")
+                    {
+                        player.SendErrorMessage("That next group does not exist in TShock!");
+                        return;
+                    }
+
+                    var group = new Group(rankName, new RankInfo(nextGroup, cost, new Dictionary<int, int>()));
+                    config.Groups.Add(group);
+                    config.Write();
+                    player.SendSuccessMessage($"You have successfully added the rank {rankName} to the config!");
+                    return;
+                }
+                case "mr":
+                case "modifyrank":
+                {
+                    // /rankadmin modifyrank <rank> <property> <value>
+
+                    var rank = args.Parameters.ElementAtOrDefault(1);
+                    var property = args.Parameters.ElementAtOrDefault(2);
+                    var value = args.Parameters.ElementAtOrDefault(3);
+
+                    var validProperties = new[] { "rankCost", "rankUnlocks", "nextGroup" };
+
+                    if (rank == null || property == null || value == null)
+                    {
+                        player.SendErrorMessage(
+                            "Invalid syntax! To modify a rank's config values, use /rankadmin modifyrank <rank> <property> <value>");
+                        player.SendInfoMessage(
+                            $"Available properties: {string.Join(", ", validProperties)}");
+                        return;
+                    }
+
+                    var group = config.GetGroup(rank);
+                    if (group == null)
+                    {
+                        player.SendErrorMessage($"Invalid group name: {rank}");
+                        return;
+                    }
+
+                    if (validProperties.Any(x => string.Equals(x, property, StringComparison.OrdinalIgnoreCase)) ==
+                        false)
+                    {
+                        player.SendErrorMessage($"Invalid property: {property}");
+                        player.SendInfoMessage(
+                            $"Available properties: {string.Join(", ", validProperties)}");
+                        return;
+                    }
+
+                    switch (property.ToLower())
+                    {
+                        case "rankcost":
+                        {
+                            if (int.TryParse(value, out var rankCost) == false)
+                            {
+                                player.SendErrorMessage("Invalid value! Value must be an integer.");
+                                return;
+                            }
+
+                            group.info.rankCost = rankCost;
+                            config.Write();
+                            player.SendSuccessMessage(
+                                $"You have successfully modified {rank}'s rankCost to {rankCost}!");
+                            break;
+                        }
+                        case "nextgroup":
+                        {
+                            // does group exist in tshock
+                            var nextGroup = TShock.Groups.GetGroupByName(value);
+
+                            if (nextGroup == null)
+                            {
+                                player.SendErrorMessage("Invalid value! Value must be a valid TShock group.");
+                                return;
+                            }
+
+                            group.info.nextGroup = value;
+                            config.Write();
+                            player.SendSuccessMessage($"You have successfully modified {rank}'s nextGroup to {value}!");
+                            break;
+                        }
+                        case "rankunlocks":
+                        {
+                            // for value, the user will input a comma separated list of item ids
+                            // if the user wants to remove all items, they can input "none"
+
+                            if (string.Equals(value, "none", StringComparison.OrdinalIgnoreCase))
+                            {
+                                group.info.rankUnlocks = null;
+                                config.Write();
+                                player.SendSuccessMessage(
+                                    $"You have successfully removed all rank unlocks from {rank}!");
+                                return;
+                            }
+
+                            var items = value.Split(',');
+                            var itemIds = new List<int>();
+                            foreach (var item in items)
+                            {
+                                if (int.TryParse(item, out var itemId) == false)
+                                {
+                                    player.SendErrorMessage(
+                                        $"Invalid value! Value must be a comma separated list of item ids (integer). Example: /rankadmin modifyrank {rank} rankUnlocks 1,2,3 <quantity for all>");
+                                    return;
+                                }
+
+                                itemIds.Add(itemId);
+                            }
+
+                            // see if they gave a quantity
+                            var quantityInput = args.Parameters.ElementAtOrDefault(4);
+
+                            if (int.TryParse(quantityInput, out var quantity) == false)
+                            {
+                                quantity = 1;
+                            }
+
+                            group.info.rankUnlocks = new Dictionary<int, int>();
+                            foreach (var itemId in itemIds)
+                            {
+                                group.info.rankUnlocks.Add(itemId, quantity);
+                            }
+
+                            config.Write();
+                            player.SendSuccessMessage(
+                                $"You have successfully modified {rank}'s rankUnlocks to {value}!");
+                            break;
+                        }
+                    }
+                    break;
+                }
+                default:
+                {
+                    DisplayAdminHelp(args);
                     return;
                 }
             }
@@ -228,8 +562,25 @@ namespace RankSystem
             config = Config.Read();
         }
 
+        internal static bool IsInPathingMode(TSPlayer player)
+        {
+            if (player.Group.Name == RankSystem.config.StartGroup
+                || player.Group.Name == config.EndGroup)
+            {
+                return true;
+            }
+
+            return RankSystem.config.Groups.Any(g => g.name == player.Group.Name);
+        }
+
         private static void Favorite(CommandArgs args)
         {
+            if (IsInPathingMode(args.Player) is false)
+            {
+                args.Player.SendErrorMessage("You are not within the main pathing system!");
+                return;
+            }
+
             var playerInformation = args.Player.GetPlaytimeInformation();
 
             if (playerInformation == null)
@@ -362,7 +713,8 @@ namespace RankSystem
                 }
 
                 args.Player.SendMessage(
-                    $"You have played for: {TimeSpan.FromSeconds(player.TotalTime).ElapsedString()}", Color.IndianRed);
+                    $"You have played for: {TimeSpan.FromSeconds(player.TotalTime).ElapsedString()}",
+                    Color.IndianRed);
 
 
                 var newGroup = config.GetNextGroup(player.TotalTime);
@@ -394,7 +746,7 @@ namespace RankSystem
 
             if (p.Group.Name == config.StartGroup) //starting rank/new player
                 TShock.UserAccounts.SetUserGroup(TShock.UserAccounts.GetUserAccountByName(p.Account.Name),
-                    config.Groups[0].name); //AutoStarts the player to the config's first rank.
+                    config.Groups.FirstOrDefault()?.name); //AutoStarts the player to the config's first rank.
 
             var favorite = playtimeInformation.Favorite;
             if (!string.IsNullOrWhiteSpace(favorite))

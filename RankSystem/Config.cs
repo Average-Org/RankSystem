@@ -39,7 +39,9 @@ namespace RankSystem
 		public string EndGroup { get; set; } = "endGroup";
 
 		public bool useAFKSystem { get; set; } = true;
-
+		public int afkTime { get; set; } = 120;
+		
+		
        public List<Group> Groups { get; set; } = new List<Group>();	
 
 		public void Write()

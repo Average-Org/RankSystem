@@ -14,6 +14,11 @@ namespace RankSystem
         internal static void RankupUser(TSPlayer player)
         {
             var playtimeInformation = player.GetPlaytimeInformation();
+
+            if (RankSystem.IsInPathingMode(player) is false)
+            {
+                return;
+            }
             
             var closestGroup = RankSystem.config.GetClosestGroup(playtimeInformation.TotalTime);
 

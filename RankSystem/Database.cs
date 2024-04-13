@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using MySql.Data.MySqlClient;
@@ -52,6 +53,38 @@ namespace RankSystem
                     $"Something went wrong while trying to insert a player into the database: {ex.ToString()}");
                 return false;
             }
+        }
+
+        public Dictionary<UserAccount, PlaytimeInformation> GetTopPlayers(int count)
+        {
+            Dictionary<UserAccount, PlaytimeInformation> topPlayers = new Dictionary<UserAccount, PlaytimeInformation>();
+            
+            try
+            {
+                using (var reader = _db.QueryReader("SELECT * FROM RankSystem ORDER BY Time DESC LIMIT @0", count))
+                {
+                    while (reader.Read())
+                    {
+                        var name = reader.Get<string>("Name");
+                        var time = reader.Get<int>("Time");
+                        var lastLogin = reader.Get<DateTime>("LastLogin");
+                        var favorite = reader.Get<string>("Favorite");
+
+                        var account = TShock.UserAccounts.GetUserAccountByName(name);
+                        if (account != null)
+                        {
+                            topPlayers.Add(account, new PlaytimeInformation(name, time, lastLogin, favorite));
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                TShock.Log.ConsoleError(
+                    $"Something went wrong while trying to get the top players from the database: {ex.ToString()}");
+            }
+            
+            return topPlayers;
         }
 
 
